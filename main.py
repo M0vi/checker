@@ -7,6 +7,9 @@ import random
 import unicodedata
 
 
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1335654618969145504/X5FTzI5dSSxJsxbRAESv-bsnkxhjii3EEmqqTw1Bf9lJG_gTThDekO2ZBPdgfG8BNjI-"  
+
+
 def load_proxies(filename):
     with open(filename, 'r') as file:
         proxies = file.read().splitlines()
@@ -14,13 +17,23 @@ def load_proxies(filename):
 
 
 def remove_special_characters(username):
-    # Remover acentos e caracteres especiais
     nfkd = unicodedata.normalize('NFKD', username)
     return ''.join([c for c in nfkd if unicodedata.category(c) != 'Mn'])
 
 
+async def send_to_discord_webhook(username):
+    """Envia o nome de usuário válido para o webhook do Discord"""
+    data = {"content": f"**{username}** ✅"}
+    async with aiohttp.ClientSession() as session:
+        async with session.post(DISCORD_WEBHOOK_URL, json=data) as response:
+            if response.status == 204:
+                print(f"{Fore.CYAN}Enviado '{username}' para o Discord!{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.RED}Falha ao enviar '{username}' para o Discord (Status: {response.status}){Style.RESET_ALL}")
+
+
 async def validate_username(session, username, proxy):
-    username = remove_special_characters(username)  # Limpar nome de caracteres especiais
+    username = remove_special_characters(username)  
     url = f"https://auth.roblox.com/v1/usernames/validate?birthday=2006-09-21T07:00:00.000Z&context=Signup&username={username}"
     proxy_url = f"http://{proxy}"
     try:
@@ -32,6 +45,10 @@ async def validate_username(session, username, proxy):
                     with open('valid.txt', 'a') as file:
                         file.write(username + '\n')
                     print(f"{Fore.CYAN}Salvo '{username}' para 'valid.txt'{Style.RESET_ALL}")
+                    
+                    # Envia para o webhook do Discord
+                    await send_to_discord_webhook(username)
+
                 elif data['code'] == 1:
                     print(f"{Fore.RED}O usuário '{username}' já está em uso{Style.RESET_ALL}")
                 elif data['code'] == 2:
@@ -46,7 +63,7 @@ async def validate_username(session, username, proxy):
 
 async def validate_usernames_from_file(filename, proxies):
     async with aiohttp.ClientSession() as session:
-        with open(filename, "r", encoding="utf-8") as file:  # Especificando a codificação utf-8
+        with open(filename, "r", encoding="utf-8") as file:
             usernames = file.read().splitlines()
 
         random.shuffle(usernames)
@@ -60,7 +77,6 @@ async def validate_usernames_from_file(filename, proxies):
 
 
 async def main():
-    # Limpa o conteúdo do arquivo valid.txt ao iniciar
     open('valid.txt', 'w').close()
 
     proxies = load_proxies("proxies.txt")
