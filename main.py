@@ -1,4 +1,3 @@
-
 import aiohttp
 import asyncio
 from itertools import cycle
@@ -61,6 +60,9 @@ async def validate_usernames_from_file(filename, proxies):
 
 
 async def main():
+    # Limpa o conteúdo do arquivo valid.txt ao iniciar
+    open('valid.txt', 'w').close()
+
     proxies = load_proxies("proxies.txt")
     while True:
         print(f"{Fore.MAGENTA}[{Fore.RESET}+{Fore.MAGENTA}]{Fore.RESET} Escolha uma opção:")
