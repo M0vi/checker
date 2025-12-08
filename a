@@ -55,15 +55,15 @@ WindUI.Creator.AddIcons("solar", {
 })
 
 local Window = WindUI:CreateWindow({
-    Title = ".ftgs hub  |  WindUI Example",
-    Folder = "ftgshub",
+    Title = "[E.B] fp3",
+    Folder = "fp3",
     IconSize = 22*2,
     NewElements = true,
     HideSearchBar = false,
     OpenButton = {
-        Title = "Open .ftgs hub UI",
+        Title = "Menu",
         CornerRadius = UDim.new(1,0),
-        StrokeThickness = 3,
+        StrokeThickness = 2,
         Enabled = true,
         Draggable = true,
         OnlyMobile = false,
@@ -73,13 +73,13 @@ local Window = WindUI:CreateWindow({
         )
     },
     Topbar = {
-        Height = 44,
+        Height = 40,
         ButtonsType = "Mac",
     },
 })
 
 Window:Tag({
-    Title = "v" .. WindUI.Version,
+    Title = "v0.0.5",
     Icon = "github",
     Color = Color3.fromHex("#1c1c1c")
 })
@@ -131,14 +131,14 @@ do
 end
 
 local ElementsSection = Window:Section({
-    Title = "Elements",
+    Title = "Scripts",
 })
 
-local OtherSection = Window:Section({
-    Title = "Other",
+local Outros = Window:Section({
+    Title = "Outros",
 })
 
--- Config / utility Notify wrapper (uses WindUI properly)
+
 local function Notify(title, content, dur)
     pcall(function()
         WindUI:Notify({
@@ -150,12 +150,12 @@ local function Notify(title, content, dur)
     end)
 end
 
--- convenience aliases used historically (kept for compatibility)
 local function notif(t, d) Notify(t, d) end
 local function notif_af(t, d) Notify(t, d) end
 
 
--- === Tevez mod / Gun system ===
+-- TAB A
+
 local GS = Replicated:WaitForChild("GunSystem")
 local GC = GS:WaitForChild("GunsConfigurations")
 local FireEvent = GS.Remotes.Events.Fire
@@ -327,7 +327,6 @@ trackTask(task.spawn(function()
     end
 end))
 
--- Tab A (unchanged logic, just fixed notifications)
 do
     local TabA = ElementsSection:Tab({
         Title = "Mods",
@@ -705,264 +704,3 @@ do
         end
     })
 end
-
--- AUTOFARM INTEGRATION START (cleaned / fixed variable names)
--- CONFIG
-local cfg = ...
-local ModoSeguro = (cfg and cfg.ModoSeguro) or false
-local RaioDeSeguranca = (cfg and cfg.RaioDeSeguranca) or 50
-
-local plr = Players.LocalPlayer
-local Remotes = Replicated:WaitForChild("Assets"):WaitForChild("Remotes")
-local BuyShop = Remotes:WaitForChild("BuyShop")
-local Robbery = Remotes:WaitForChild("Robbery")
-local char = player.Character or player.CharacterAdded:Wait()
-local root = char:WaitForChild("HumanoidRootPart")
-local bag = player:WaitForChild("Backpack")
-
-local bank = workspace.Map.Robbery.Bank
-local CollectPos = bank.CollectPad.Position
-local status = bank.RobberyStatus.SurfaceGui.BankStatus
-
-local A = "SAFEZONE"
-local POS = CollectPos - Vector3.new(0,30,0)
-local TAMANHO = Vector3.new(45,12,45)
-
-local safe = workspace:FindFirstChild(A)
-if not safe then
-    safe = Instance.new("Part")
-    safe.Name = A
-    safe.Size = TAMANHO
-    safe.Anchored = true
-    safe.CanCollide = true
-    safe.Position = POS
-    safe.Transparency = 0.15
-    safe.Material = Enum.Material.SmoothPlastic
-    safe.BrickColor = BrickColor.new("Really black")
-    safe.Parent = workspace
-end
-
-local function ref_af()
-    char = player.Character or player.CharacterAdded:Wait()
-    root = char:WaitForChild("HumanoidRootPart")
-    bag = player:WaitForChild("Backpack")
-end
-
-local function tp_af(p)
-    if char and root then
-        char:PivotTo(CFrame.new(p))
-    end
-end
-
-local function tps_af()
-    local y = safe.Position.Y + safe.Size.Y/2 + 4
-    tp_af(Vector3.new(safe.Position.X,y,safe.Position.Z))
-end
-
-local function item_af(n)
-    return bag:FindFirstChild(n) or char:FindFirstChild(n)
-end
-
-local function aberto_af()
-    local s = status
-    return s and s.Text == "ABERTO"
-end
-
-local function c4_af()
-    if not item_af("C4") then
-        tp_af(Vector3.new(-760,19,-343))
-        task.wait(0.3)
-        BuyShop:FireServer("C4")
-        repeat task.wait(0.1) until item_af("C4")
-    end
-end
-
-local function dinheiro_af()
-    for _,v in ipairs(workspace:GetDescendants()) do
-        if v.Name == "Money Bag" then
-            local h = v:FindFirstChildWhichIsA("BasePart")
-            local a = h and h:FindFirstChild("DataAttachment")
-            local g = a and a:FindFirstChild("BillboardGui")
-            local l = g and g.Frame:FindFirstChild("Money")
-            return l and tonumber(l.Text:match("%d+")) or 0
-        end
-    end
-    return 0
-end
-
-local function spin_af()
-    if char and root then
-        char:PivotTo(root.CFrame * CFrame.Angles(0,math.rad(30),0))
-    end
-end
-
-local function vender_af()
-    local b = Vector3.new(-742,-7,-536)
-    local o = Vector3.new(math.random(-3,3),math.random(-1,1),math.random(-3,3))
-    local p = b + o
-    tp_af(p)
-    task.wait(0.15)
-    while dinheiro_af() > 0 do
-        Robbery:FireServer("Payment")
-        task.wait(0.1)
-    end
-    task.wait(1)
-    tp_af(CollectPos)
-    task.wait(0.1)
-    tps_af()
-    task.wait(0.05)
-end
-
-local function seguro_af()
-    if not ModoSeguro then return false end
-    for _,p in ipairs(Players:GetPlayers()) do
-        if p ~= plr and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            local d = (p.Character.HumanoidRootPart.Position - root.Position).Magnitude
-            if d <= RaioDeSeguranca then
-                tps_af()
-                return true
-            end
-        end
-    end
-    return false
-end
-
-local rodando = false
-local AutofarmEnabled = false
-
-local function farm_af()
-    if rodando then return end
-    rodando = true
-    task.spawn(function()
-        repeat task.wait(0.3) until aberto_af()
-        c4_af()
-        tp_af(Vector3.new(-309,-8,-358))
-        task.wait(0.25)
-        local t = item_af("C4")
-        if t then char.Humanoid:EquipTool(t) end
-        repeat task.wait(0.1) until item_af("C4")
-        local vault = bank.BankVault.Vault.Front.Position
-        tp_af(vault)
-        task.wait(0.25)
-        local prompt = bank.BankVault.C4.Handle:FindFirstChildOfClass("ProximityPrompt")
-        while item_af("C4") and aberto_af() and AutofarmEnabled do
-            if seguro_af() then repeat task.wait(1) until not seguro_af() end
-            fireproximityprompt(prompt)
-            task.wait(0.15)
-        end
-        tps_af()
-        task.wait(10)
-        while aberto_af() and AutofarmEnabled do
-            if seguro_af() then repeat task.wait(1) until not seguro_af() end
-            if dinheiro_af() >= 4000 then
-                task.wait(math.random(5,7))
-                vender_af()
-            else
-                tp_af(CollectPos)
-                task.wait(0.01)
-                spin_af()
-                if char.Humanoid.Health < 50 then
-                    tps_af()
-                    repeat task.wait(0.2) until char.Humanoid.Health >= 90
-                end
-                tps_af()
-                task.wait(0.005)
-            end
-        end
-        rodando = false
-    end)
-end
-
-ref_af()
-
-plr.CharacterAdded:Connect(function(c)
-    task.wait(0.05)
-    ref_af()
-    c:WaitForChild("Humanoid").Died:Connect(function()
-        rodando = false
-        local n = plr.CharacterAdded:Wait()
-        char = n
-        ref_af()
-        task.wait(1)
-        tp_af(CollectPos)
-        task.wait(0.1)
-        tps_af()
-        if AutofarmEnabled then
-            task.spawn(function() farm_af() end)
-        end
-    end)
-end)
-
--- notifications for bank open/close
-local last = status.Text
-Notify("Banco", last == "ABERTO" and "O banco está aberto" or "O banco está fechado")
-
-status:GetPropertyChangedSignal("Text"):Connect(function()
-    local s = status.Text
-    if s ~= last then
-        last = s
-        if s == "ABERTO" then
-            Notify("Banco", "O banco abriu")
-        else
-            Notify("Banco", "O banco fechou")
-        end
-    end
-end)
--- AUTOFARM INTEGRATION END
-
--- Replace / adapt Tab C to interact with autofarm
-do
-    local TabC = ElementsSection:Tab({
-        Title = "Autofarm",
-        Icon = "solar:CursorSquareBold",
-        IconColor = Blue,
-        IconShape = "Square",
-    })
-
-    local SectionC = TabC:Section({
-        Title = "Autofarm Controls"
-    })
-
-    SectionC:Toggle({
-        Title = "Ativar autofarm",
-        Callback = function(v)
-            AutofarmEnabled = v
-            if v then
-                Notify("Autofarm", "Autofarm ativado")
-                if not rodando then
-                    task.spawn(function() farm_af() end)
-                end
-            else
-                Notify("Autofarm", "Autofarm desativado")
-                AutofarmEnabled = false
-                rodando = false
-            end
-        end
-    })
-    SectionC:Space()
-
-    SectionC:Toggle({
-        Title = "Modo seguro",
-        Callback = function(v)
-            ModoSeguro = v
-            Notify("Modo seguro", v and "Ativado" or "Desativado")
-        end
-    })
-    SectionC:Space()
-
-    SectionC:Input({
-        Title = "Raio de segurança",
-        Placeholder = tostring(RaioDeSeguranca),
-        Callback = function(v)
-            local n = tonumber(v)
-            if n then
-                RaioDeSeguranca = n
-                Notify("Modo seguro", "Raio atualizado para "..n)
-            else
-                Notify("Erro", "Digite um número válido")
-            end
-        end
-    })
-end
-
--- End of file
