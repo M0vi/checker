@@ -1,3 +1,4 @@
+-- final_script.txt (corrigido, integrado, limpo)
 local n = getrawmetatable(game)
 setreadonly(n, false)
 local o = n.__index
@@ -14,26 +15,21 @@ end)
 
 setreadonly(n, true)
 
---variables
-
-local Players        = game:GetService("Players")
-local UIS            = game:GetService("UserInputService")
-local StarterGui     = game:GetService("StarterGui")
-local RunService     = game:GetService("RunService")
-local Replicated     = game:GetService("ReplicatedStorage")
-local TweenService   = game:GetService("TweenService")
-
-local Player = Players.LocalPlayer
-
+-- variables / services
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local RunService = game:GetService("RunService")
+local Replicated = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
-local UserInputService = game:GetService("UserInputService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local LocalizationService = game:GetService("LocalizationService")
 
+local Player = Players.LocalPlayer
 local player = Players.LocalPlayer
 
 local WindUI
-
 do
     local ok, result = pcall(function()
         return require("./src/Init")
@@ -300,203 +296,26 @@ local OtherSection = Window:Section({
     Title = "Other",
 })
 
-do
-
-    local TabC = ElementsSection:Tab({
-        Title = "C",
-        Icon = "solar:CursorSquareBold",
-        IconColor = Blue,
-        IconShape = "Square",
-    })
-
-    local SectionC = TabC:Section({
-        Title = "C - Controls"
-    })
-
-    SectionC:Toggle({
-        Title = "Ativar autofarm",
-        Callback = function(v) print("C Toggle 1:", v) end
-    })
-    SectionC:Space()
-
-    SectionC:Toggle({
-        Title = "Modo seguro",
-        Callback = function(v) print("C Toggle 2:", v) end
-    })
-    SectionC:Space()
-
-    SectionC:Input({
-        Title = "Raio de seguranÃ§a",
-        Placeholder = "Enter C input",
-        Callback = function(v) print("C Input:", v) end
-    })
-end
-
-do
-    local ConfigTab = ConfigUsageSection:Tab({
-        Title = "Config Usage",
-        Icon = "solar:FolderWithFilesBold",
-        IconColor = Purple,
-        IconShape = nil,
-    })
-
-    local ConfigManager = Window.ConfigManager
-    local ConfigName = "default"
-
-    local ConfigNameInput = ConfigTab:Input({
-        Title = "Config Name",
-        Icon = "file-cog",
-        Callback = function(value)
-            ConfigName = value
-        end
-    })
-
-    ConfigTab:Space()
-
-    local AllConfigs = ConfigManager:AllConfigs()
-    local DefaultValue = table.find(AllConfigs, ConfigName) and ConfigName or nil
-
-    local AllConfigsDropdown = ConfigTab:Dropdown({
-        Title = "All Configs",
-        Desc = "Select existing configs",
-        Values = AllConfigs,
-        Value = DefaultValue,
-        Callback = function(value)
-            ConfigName = value
-            ConfigNameInput:Set(value)
-        end
-    })
-
-    ConfigTab:Space()
-
-    ConfigTab:Button({
-        Title = "Save Config",
-        Icon = "",
-        Justify = "Center",
-        Callback = function()
-            Window.CurrentConfig = ConfigManager:Config(ConfigName)
-            if Window.CurrentConfig:Save() then
-                WindUI:Notify({
-                    Title = "Config Saved",
-                    Desc = "Config '" .. ConfigName .. "' saved",
-                    Icon = "check",
-                })
-            end
-
-            AllConfigsDropdown:Refresh(ConfigManager:AllConfigs())
-        end
-    })
-
-    ConfigTab:Space()
-
-    ConfigTab:Button({
-        Title = "Load Config",
-        Icon = "",
-        Justify = "Center",
-        Callback = function()
-            Window.CurrentConfig = ConfigManager:CreateConfig(ConfigName)
-            if Window.CurrentConfig:Load() then
-                WindUI:Notify({
-                    Title = "Config Loaded",
-                    Desc = "Config '" .. ConfigName .. "' loaded",
-                    Icon = "refresh-cw",
-                })
-            end
-        end
-    })
-
-    ConfigTab:Space()
-
-    ConfigTab:Button({
-        Title = "Print AutoLoad Configs",
-        Icon = "",
-        Justify = "Center",
-        Callback = function()
-            pcall(function()
-                print(game:GetService("HttpService"):JSONDecode(ConfigManager:GetAutoLoadConfigs()))
-            end)
-        end
-    })
-end
-
-do
-    local InviteCode = "ftgs-development-hub-1300692552005189632"
-    local DiscordAPI = "https://discord.com/api/v10/invites/" .. InviteCode .. "?with_counts=true&with_expiration=true"
-
-    local ok, resp = pcall(function()
-        return WindUI.Creator.Request({
-            Url = DiscordAPI,
-            Method = "GET",
-            Headers = {
-                ["User-Agent"] = "WindUI/Example",
-                ["Accept"] = "application/json"
-            }
-        })
-    end)
-
-    local DiscordTab = OtherSection:Tab({
-        Title = "Discord",
-    })
-
-    if ok and resp and resp.Body then
-        local success, Response = pcall(function()
-            return WindUI.cloneref(game:GetService("HttpService")):JSONDecode(resp.Body)
-        end)
-
-        if success and Response and Response.guild then
-            DiscordTab:Section({
-                Title = "Join our Discord server!",
-                TextSize = 20,
-            })
-            DiscordTab:Paragraph({
-                Title = tostring(Response.guild.name),
-                Desc = tostring(Response.guild.description),
-                Image = "https://cdn.discordapp.com/icons/" .. Response.guild.id .. "/" .. Response.guild.icon .. ".png?size=1024",
-                Thumbnail = "https://cdn.discordapp.com/banners/1300692552005189632/35981388401406a4b7dffd6f447a64c4.png?size=512",
-                ImageSize = 48,
-                Buttons = {
-                    {
-                        Title = "Copy link",
-                        Icon = "link",
-                        Callback = function()
-                            pcall(function() setclipboard("https://discord.gg/" .. InviteCode) end)
-                        end
-                    }
-                }
-            })
-        end
-    end
-end
-
-do
-    local ok, NebulaIcons = pcall(function()
-        return loadstring(game:HttpGetAsync("https://raw.nebulasoftworks.xyz/nebula-icon-library-loader"))()
-    end)
-
-    if ok and NebulaIcons then
-        WindUI.Creator.AddIcons("fluency", NebulaIcons.Fluency)
-        WindUI.Creator.AddIcons("nebula", NebulaIcons.nebulaIcons)
-
-        local TestSection = Window:Section({
-            Title = "Custom icons usage test (nebula)",
-            Icon = "nebula:nebula",
-        })
-    end
-end
-
-
-local function Notify(title, msg, dur)
+-- Config / utility Notify wrapper (uses WindUI properly)
+local function Notify(title, content, dur)
     pcall(function()
         WindUI:Notify({
-            Title = title,
-            Desc = msg
+            Title = tostring(title or ""),
+            Content = tostring(content or ""),
+            Duration = dur or 3,
+            Icon = "bird"
         })
-end)
+    end)
+end
 
+-- convenience aliases used historically (kept for compatibility)
+local function notif(t, d) Notify(t, d) end
+local function notif_af(t, d) Notify(t, d) end
 
 pcall(function() Notify("oi ^^", "feito por fp3 no Discord", 5) end)
 pcall(function() Notify("Ajuda", "WindUI integrado. Use a aba A.", 7) end)
 
+-- === Tevez mod / Gun system ===
 local GS = Replicated:WaitForChild("GunSystem")
 local GC = GS:WaitForChild("GunsConfigurations")
 local FireEvent = GS.Remotes.Events.Fire
@@ -601,7 +420,7 @@ local function ModifyGun(prop, val)
     local cfg, name = GetGun()
     if cfg and cfg[prop] ~= nil then
         cfg[prop] = val
-        Notify("GunMod", name.." "..prop.." â†’ "..tostring(val))
+        Notify("GunMod", name.." "..prop.." → "..tostring(val))
     end
 end
 
@@ -686,6 +505,7 @@ trackTask(task.spawn(function()
     end
 end))
 
+-- Tab A (unchanged logic, just fixed notifications)
 do
     local TabA = ElementsSection:Tab({
         Title = "A",
@@ -709,18 +529,15 @@ do
             if state then
                 if not HasGun() then
                     Blocker = true
-                    WindUI:Notify({
-                        Title = "Erro",
-                        Desc = "VocÃª precisa de uma arma."
-                    })
+                    Notify("Erro", "Você precisa de uma arma.")
                     return
                 end
                 Aura = true
                 Blocker = false
-                WindUI:Notify({ Title = "Script", Desc = "[KILL-AURA] Ativado" })
+                Notify("Script", "[KILL-AURA] Ativado")
             else
                 Aura = false
-                WindUI:Notify({ Title = "Script", Desc = "[KILL-AURA] Desativado" })
+                Notify("Script", "[KILL-AURA] Desativado")
             end
         end
     })
@@ -735,14 +552,14 @@ do
                     pcall(function() NoClipConn:Disconnect() end)
                 end
                 NoClipConn = RunService.Stepped:Connect(NoClip)
-                WindUI:Notify({ Title = "Noclip", Desc = "Noclip ON" })
+                Notify("Noclip", "Noclip ON")
             else
                 CanCollide = true
                 if NoClipConn then
                     pcall(function() NoClipConn:Disconnect() end)
                     NoClipConn = nil
                 end
-                WindUI:Notify({ Title = "Noclip", Desc = "Noclip OFF" })
+                Notify("Noclip", "Noclip OFF")
             end
         end
     })
@@ -755,9 +572,9 @@ do
             local n = tonumber(v)
             bulletsValue = n
             if n then
-                WindUI:Notify({ Title = "Bullets", Desc = "Valor salvo: "..tostring(n) })
+                Notify("Bullets", "Valor salvo: "..tostring(n))
             else
-                WindUI:Notify({ Title = "Bullets", Desc = "Valor invÃ¡lido" })
+                Notify("Bullets", "Valor inválido")
             end
         end
     })
@@ -770,9 +587,9 @@ do
             local n = tonumber(v)
             spreadValue = n
             if n then
-                WindUI:Notify({ Title = "Spread", Desc = "Valor salvo: "..tostring(n) })
+                Notify("Spread", "Valor salvo: "..tostring(n))
             else
-                WindUI:Notify({ Title = "Spread", Desc = "Valor invÃ¡lido" })
+                Notify("Spread", "Valor inválido")
             end
         end
     })
@@ -785,9 +602,9 @@ do
             local n = tonumber(v)
             rangeValue = n
             if n then
-                WindUI:Notify({ Title = "Range", Desc = "Valor salvo: "..tostring(n) })
+                Notify("Range", "Valor salvo: "..tostring(n))
             else
-                WindUI:Notify({ Title = "Range", Desc = "Valor invÃ¡lido" })
+                Notify("Range", "Valor inválido")
             end
         end
     })
@@ -797,7 +614,7 @@ do
         Title = "Modificar",
         Callback = function()
             if not HasGun() then
-                WindUI:Notify({ Title = "Erro", Desc = "VocÃª precisa de uma arma para modificar." })
+                Notify("Erro", "Você precisa de uma arma para modificar.")
                 return
             end
 
@@ -811,7 +628,7 @@ do
                 ModifyGun("Range", rangeValue)
             end
 
-            WindUI:Notify({ Title = "GunMod", Desc = "ModificaÃ§Ãµes aplicadas." })
+            Notify("GunMod", "Modificações aplicadas.")
         end
     })
     SectionA:Space()
@@ -823,9 +640,9 @@ do
             local n = tonumber(v)
             speedValue = n
             if n then
-                WindUI:Notify({ Title = "Speed", Desc = "Valor salvo: "..tostring(n) })
+                Notify("Speed", "Valor salvo: "..tostring(n))
             else
-                WindUI:Notify({ Title = "Speed", Desc = "Valor invÃ¡lido" })
+                Notify("Speed", "Valor inválido")
             end
         end
     })
@@ -835,16 +652,16 @@ do
         Title = "Aplicar",
         Callback = function()
             if not speedValue then
-                WindUI:Notify({ Title = "Speed", Desc = "Informe um valor vÃ¡lido." })
+                Notify("Speed", "Informe um valor válido.")
                 return
             end
 
             local h = Player.Character and Player.Character:FindFirstChild("Humanoid")
             if h then
                 h.WalkSpeed = speedValue
-                WindUI:Notify({ Title = "Speed", Desc = "Alterada para "..tostring(speedValue) })
+                Notify("Speed", "Alterada para "..tostring(speedValue))
             else
-                WindUI:Notify({ Title = "Speed", Desc = "Humanoid nÃ£o encontrado." })
+                Notify("Speed", "Humanoid não encontrado.")
             end
         end
     })
@@ -856,12 +673,13 @@ do
             local h = Player.Character and Player.Character:FindFirstChild("Humanoid")
             if h then
                 h.WalkSpeed = WalkSpeedDefault or 16
-                WindUI:Notify({ Title = "Speed", Desc = "Restaurada para "..tostring(WalkSpeedDefault or 16) })
+                Notify("Speed", "Restaurada para "..tostring(WalkSpeedDefault or 16))
             end
         end
     })
 end
 
+-- HB Expander (kept intact)
 do
     local TabB = ElementsSection:Tab({
         Title = "HB Expander",
@@ -1052,7 +870,7 @@ do
     SectionB:Space()
 
     SectionB:Slider({
-        Title = "TransparÃªncia",
+        Title = "Transparência",
         Step = 0.02,
         Value = {
             Min = 0,
@@ -1066,23 +884,21 @@ do
     })
 end
 
--- AUTOFARM INTEGRATION START
--- The autofarm logic is included below (unchanged), UI removed and notifications routed to WindUI.
+-- AUTOFARM INTEGRATION START (cleaned / fixed variable names)
 -- CONFIG
 local cfg = ...
-local ModoSeguro = (cfg and cfg.ModoSeguro) or true
+local ModoSeguro = (cfg and cfg.ModoSeguro) or false
 local RaioDeSeguranca = (cfg and cfg.RaioDeSeguranca) or 50
 
-local Remotes = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("Remotes")
+local plr = Players.LocalPlayer
+local Remotes = Replicated:WaitForChild("Assets"):WaitForChild("Remotes")
 local BuyShop = Remotes:WaitForChild("BuyShop")
 local Robbery = Remotes:WaitForChild("Robbery")
-
-local plr = Players.LocalPlayer
-local char = plr.Character or plr.CharacterAdded:Wait()
+local char = player.Character or player.CharacterAdded:Wait()
 local root = char:WaitForChild("HumanoidRootPart")
-local bag = plr:WaitForChild("Backpack")
+local bag = player:WaitForChild("Backpack")
 
-local bank = Workspace.Map.Robbery.Bank
+local bank = workspace.Map.Robbery.Bank
 local CollectPos = bank.CollectPad.Position
 local status = bank.RobberyStatus.SurfaceGui.BankStatus
 
@@ -1090,7 +906,7 @@ local A = "SAFEZONE"
 local POS = CollectPos - Vector3.new(0,30,0)
 local TAMANHO = Vector3.new(45,12,45)
 
-local safe = Workspace:FindFirstChild(A)
+local safe = workspace:FindFirstChild(A)
 if not safe then
     safe = Instance.new("Part")
     safe.Name = A
@@ -1101,13 +917,13 @@ if not safe then
     safe.Transparency = 0.15
     safe.Material = Enum.Material.SmoothPlastic
     safe.BrickColor = BrickColor.new("Really black")
-    safe.Parent = Workspace_af
+    safe.Parent = workspace
 end
 
 local function ref_af()
-    char = plr.Character or plr.CharacterAdded:Wait()
+    char = player.Character or player.CharacterAdded:Wait()
     root = char:WaitForChild("HumanoidRootPart")
-    bag = plr:WaitForChild("Backpack")
+    bag = player:WaitForChild("Backpack")
 end
 
 local function tp_af(p)
@@ -1140,7 +956,7 @@ local function c4_af()
 end
 
 local function dinheiro_af()
-    for _,v in ipairs(Workspace:GetDescendants()) do
+    for _,v in ipairs(workspace:GetDescendants()) do
         if v.Name == "Money Bag" then
             local h = v:FindFirstChildWhichIsA("BasePart")
             local a = h and h:FindFirstChild("DataAttachment")
@@ -1176,7 +992,7 @@ local function vender_af()
 end
 
 local function seguro_af()
-    if not ModoSeguro then return end
+    if not ModoSeguro then return false end
     for _,p in ipairs(Players:GetPlayers()) do
         if p ~= plr and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
             local d = (p.Character.HumanoidRootPart.Position - root.Position).Magnitude
@@ -1190,6 +1006,7 @@ local function seguro_af()
 end
 
 local rodando = false
+local AutofarmEnabled = false
 
 local function farm_af()
     if rodando then return end
@@ -1206,14 +1023,14 @@ local function farm_af()
         tp_af(vault)
         task.wait(0.25)
         local prompt = bank.BankVault.C4.Handle:FindFirstChildOfClass("ProximityPrompt")
-        while item_af("C4") and aberto_af() do
+        while item_af("C4") and aberto_af() and AutofarmEnabled do
             if seguro_af() then repeat task.wait(1) until not seguro_af() end
             fireproximityprompt(prompt)
             task.wait(0.15)
         end
         tps_af()
         task.wait(10)
-        while aberto_af() do
+        while aberto_af() and AutofarmEnabled do
             if seguro_af() then repeat task.wait(1) until not seguro_af() end
             if dinheiro_af() >= 4000 then
                 task.wait(math.random(5,7))
@@ -1248,29 +1065,30 @@ plr.CharacterAdded:Connect(function(c)
         tp_af(CollectPos)
         task.wait(0.1)
         tps_af()
-        -- farm_af() removed here as well
+        if AutofarmEnabled then
+            task.spawn(function() farm_af() end)
+        end
     end)
 end)
 
-
-
+-- notifications for bank open/close
 local last = status.Text
-notif("Banco", last == "ABERTO" and "O banco estÃ¡ aberto" or "O banco estÃ¡ fechado")
+Notify("Banco", last == "ABERTO" and "O banco está aberto" or "O banco está fechado")
 
-statusLabel:GetPropertyChangedSignal("Text"):Connect(function()
+status:GetPropertyChangedSignal("Text"):Connect(function()
     local s = status.Text
     if s ~= last then
         last = s
         if s == "ABERTO" then
-            notif_af("Banco", "O banco abriu")
+            Notify("Banco", "O banco abriu")
         else
-            notif_af("Banco", "O banco fechou")
+            Notify("Banco", "O banco fechou")
         end
     end
 end)
 -- AUTOFARM INTEGRATION END
 
--- Replace Tab C with autofarm controls
+-- Replace / adapt Tab C to interact with autofarm
 do
     local TabC = ElementsSection:Tab({
         Title = "Autofarm",
@@ -1286,13 +1104,15 @@ do
     SectionC:Toggle({
         Title = "Ativar autofarm",
         Callback = function(v)
+            AutofarmEnabled = v
             if v then
-                WindUI:Notify({Title="Autofarm", Desc="Autofarm ativado"})
+                Notify("Autofarm", "Autofarm ativado")
                 if not rodando then
                     task.spawn(function() farm_af() end)
                 end
             else
-                WindUI:Notify({Title="Autofarm", Desc="Autofarm desativado"})
+                Notify("Autofarm", "Autofarm desativado")
+                AutofarmEnabled = false
                 rodando = false
             end
         end
@@ -1303,31 +1123,24 @@ do
         Title = "Modo seguro",
         Callback = function(v)
             ModoSeguro = v
-            WindUI:Notify({
-                Title = "Modo seguro",
-                Desc = v and "Ativado" or "Desativado"
-            })
+            Notify("Modo seguro", v and "Ativado" or "Desativado")
         end
     })
     SectionC:Space()
 
     SectionC:Input({
-        Title = "Raio de seguranÃ§a",
+        Title = "Raio de segurança",
         Placeholder = tostring(RaioDeSeguranca),
         Callback = function(v)
             local n = tonumber(v)
             if n then
                 RaioDeSeguranca = n
-                WindUI:Notify({
-                    Title = "Modo seguro",
-                    Desc = "Raio atualizado para "..n
-                })
+                Notify("Modo seguro", "Raio atualizado para "..n)
             else
-                WindUI:Notify({
-                    Title = "Erro",
-                    Desc = "Digite um nÃºmero vÃ¡lido"
-                })
+                Notify("Erro", "Digite um número válido")
             end
         end
     })
 end
+
+-- End of file
