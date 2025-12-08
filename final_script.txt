@@ -1,10 +1,5 @@
--- final_script.txt (corrigido, integrado, limpo)
--- Author: adapted for user
--- Purpose: Consolidated loader / UI for fp3 with rawget/rawset weapon modification
--- Note: Preserves original UI structure and paragraphs. Uses rawget/rawset when modifying weapon tables.
-
 -- =========================
--- 1) ENVIRONMENT / HOOKS
+-- 1) HOOKS
 -- =========================
 local n = getrawmetatable(game)
 setreadonly(n, false)
@@ -22,8 +17,26 @@ end)
 
 setreadonly(n, true)
 
+local function bypass(h)
+    local ok, mt = pcall(getrawmetatable, h)
+    if not ok or not mt then return end
+
+    setreadonly(mt, false)
+
+    local old = mt.__index
+    mt.__index = newcclosure(function(s, k)
+        if s == h then
+            if k == "WalkSpeed" then return 16 end
+            if k == "JumpPower" then return 50 end
+        end
+        return old(s, k)
+    end)
+
+    setreadonly(mt, true)
+end
+
 -- =========================
--- 2) SERVICES & VARIABLES
+-- 2) SERVIÇOS E VARIABLES
 -- =========================
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -38,7 +51,7 @@ local LocalizationService = game:GetService("LocalizationService")
 local Player = Players.LocalPlayer
 local player = Players.LocalPlayer
 
--- WindUI init (keeps original loading behavior)
+-- Loader
 local WindUI
 do
     local ok, result = pcall(function()
@@ -53,7 +66,7 @@ do
 end
 
 -- =========================
--- 3) UI: ICONS & WINDOW
+-- 3) UI
 -- =========================
 WindUI.Creator.AddIcons("solar", {
     ["CheckSquareBold"] = "rbxassetid://132438947521974",
@@ -94,7 +107,7 @@ local Window = WindUI:CreateWindow({
 Window:Tag({
     Title = "v0.0.5",
     Icon = "github",
-    Color = Color3.fromHex("#1c1c1c")
+    Color = Color3.fromHex("#3480eb")
 })
 
 local Purple = Color3.fromHex("#7775F2")
@@ -105,7 +118,7 @@ local Blue = Color3.fromHex("#257AF7")
 local Red = Color3.fromHex("#EF4F1D")
 
 -- =========================
--- 4) ABOUT TAB (UI SECTIONS)
+-- 4) INFORMAÇÕES (TAB)
 -- =========================
 do
     local AboutTab = Window:Tab({
@@ -147,7 +160,7 @@ do
 end
 
 -- =========================
--- 5) MAIN SECTIONS / SHORTCUTS
+-- 5) SEÇÕES
 -- =========================
 local ElementsSection = Window:Section({
     Title = "Scripts",
@@ -158,7 +171,7 @@ local Outros = Window:Section({
 })
 
 -- =========================
--- 6) UTIL: Notifications
+-- 6) NOTIFICAÇÕES
 -- =========================
 local function Notify(title, content, dur)
     pcall(function()
@@ -175,7 +188,7 @@ local function notif(t, d) Notify(t, d) end
 local function notif_af(t, d) Notify(t, d) end
 
 -- =========================
--- 7) CORE: Gun System Integration
+-- 7) CORE: MODS (TAB)
 -- =========================
 local GS = Replicated:WaitForChild("GunSystem")
 local GC = GS:WaitForChild("GunsConfigurations")
@@ -196,7 +209,6 @@ local function track(c) table.insert(Connections, c) end
 local function trackTask(t) table.insert(Tasks, t) end
 local function reg(target) LastTargetTime = tick() end
 
--- Returns true if player has a gun (by name presence in backpack/character)
 local function HasGun()
     local bp = Player:FindFirstChild("Backpack")
     local char = Player.Character
@@ -210,25 +222,7 @@ local function HasGun()
     return false
 end
 
--- Bypass metatable for Humanoid readouts (keeps expected values)
-local function bypass(h)
-    local ok, mt = pcall(getrawmetatable, h)
-    if not ok or not mt then return end
-
-    setreadonly(mt, false)
-
-    local old = mt.__index
-    mt.__index = newcclosure(function(s, k)
-        if s == h then
-            if k == "WalkSpeed" then return 16 end
-            if k == "JumpPower" then return 50 end
-        end
-        return old(s, k)
-    end)
-
-    setreadonly(mt, true)
-end
-
+-- Aplica o bypass de speed e jp
 if Player.Character then
     local hum = Player.Character:FindFirstChildOfClass("Humanoid")
     if hum then bypass(hum) end
@@ -238,7 +232,8 @@ Player.CharacterAdded:Connect(function(c)
     bypass(h)
 end)
 
--- NoClip helper
+-- Noclip
+
 local function NoClip()
     if not CanCollide and Player.Character then
         for _, v in pairs(Player.Character:GetDescendants()) do
@@ -249,8 +244,7 @@ local function NoClip()
     end
 end
 
--- GetGun: tries to resolve the weapon config table for the currently equipped tool.
--- Preferred: require() the ModuleScript under GunsConfigurations. If require fails, returns nil.
+-- Pega a info da arma
 local function GetGun()
     local c = Player.Character
     if not c then return nil end
@@ -261,18 +255,16 @@ local function GetGun()
     local cfgInstance = GC:FindFirstChild(tool.Name)
     if not cfgInstance then return nil end
 
-    -- Attempt to require the ModuleScript to obtain the config table
     local ok, moduleTable = pcall(function() return require(cfgInstance) end)
     if ok and type(moduleTable) == "table" then
         return moduleTable, tool.Name
     end
 
-    -- Fallback: some environments store the table in _G or elsewhere; attempt a safe search in getgc if available
-    if type(getgc) == "function" then
-        for _, v in ipairs(getgc()) do
-            if type(v) == "table" and rawget(v, "BackCFrame") and rawget(v, "Damage") then
-                -- crude heuristic: match by name if possible
-                if rawget(v, "Name") == tool.Name or rawget(v, "Title") == tool.Name then
+if type(getgc) == "function" then
+    for _, v in ipairs(getgc()) do
+        if type(v) == "table" and rawget(v, "BackCFrame") and rawget(v, "Damage") then
+
+        if rawget(v, "Name") == tool.Name or rawget(v, "Title") == tool.Name then
                     return v, tool.Name
                 end
             end
@@ -282,8 +274,7 @@ local function GetGun()
     return nil, tool.Name
 end
 
--- ModifyGun uses rawget to check existence and rawset to mutate values.
--- It intentionally does NOT send a notify for the specific damage value (per request).
+-- Modifica os values da arma
 local function ModifyGun(prop, val)
     local cfg, gunName = GetGun()
     if not cfg then
@@ -291,17 +282,16 @@ local function ModifyGun(prop, val)
         return
     end
 
-    -- Check property existence using rawget
+-- Check da propriedade
     if rawget(cfg, prop) == nil then
         Notify("Erro", "Propriedade '"..tostring(prop).."' não existe nesta arma.")
         return
     end
 
-    -- Set value using rawset
     rawset(cfg, prop, val)
 end
 
--- Auto reload loop (keeps original functionality)
+-- Recarregar
 trackTask(task.spawn(function()
     while task.wait(0.25) do
         if not Active or not Aura or not HasGun() then continue end
@@ -317,7 +307,7 @@ trackTask(task.spawn(function()
     end
 end))
 
--- Kill-aura auto fire logic (keeps original behavior)
+-- Kill aura
 trackTask(task.spawn(function()
     local rp = RaycastParams.new()
     rp.FilterType = Enum.RaycastFilterType.Exclude
@@ -384,7 +374,7 @@ trackTask(task.spawn(function()
 end))
 
 -- =========================
--- 8) TAB A - Mods (UI & logic)
+-- 8) TAB - Mods (UI)
 -- =========================
 do
     local TabA = ElementsSection:Tab({
@@ -395,7 +385,7 @@ do
     })
 
     local SectionA = TabA:Section({
-        Title = "A - Controls"
+        Title = "KILL-AURA"
     })
 
     local bulletsValue = nil
@@ -403,9 +393,6 @@ do
     local rangeValue   = nil
     local speedValue   = nil
 
-    ---------------------------------------
-    -- Paragraphs & Controls (preserved)
-    ---------------------------------------
     SectionA:Paragraph({
         Title = "Kill Aura",
         Desc = "Enquanto estiver com a arma, mata todos os inimigos ao redor de você. Não mata inimigos em safezones.",
@@ -531,7 +518,6 @@ do
                 return
             end
 
-            -- Use rawset on the weapon config table for Bullets, Spread, Range
             if bulletsValue then ModifyGun("Bullets", bulletsValue) end
             if spreadValue then ModifyGun("Spread", spreadValue) end
             if rangeValue then ModifyGun("Range", rangeValue) end
@@ -603,7 +589,7 @@ do
 end
 
 -- =========================
--- 9) HB: Hitbox & ESP (preserved)
+-- 9) Hitbox e ESP
 -- =========================
 do
     local TabB = ElementsSection:Tab({
@@ -830,7 +816,7 @@ do
 end
 
 -- =========================
--- 10) OTHER / DISCORD (preserved)
+-- 10) DISCORD
 -- =========================
 do
     local InviteCode = "4gcMZxKPcQ"
@@ -858,7 +844,7 @@ do
             Title = tostring(Response.guild.name),
             Desc = tostring(Response.guild.description),
             Image = "https://cdn.discordapp.com/icons/" .. Response.guild.id .. "/" .. Response.guild.icon .. ".png?size=1024",
-            Thumbnail = "https://cdn.discordapp.com/banners/1300692552005189632/35981388401406a4b7dffd6f447a64c4.png?size=512",
+            Thumbnail = "https://i.pinimg.com/736x/4b/18/59/4b18592b4ebf3c618d121ff8d687f3c9.jpg",
             ImageSize = 48,
             Buttons = {
                 {
@@ -874,8 +860,9 @@ do
 end
 
 -- =========================
--- 11) ICON LIBS (preserved)
+-- 11) ICONS
 -- =========================
+
 do
     local NebulaIcons = loadstring(game:HttpGetAsync("https://raw.nebulasoftworks.xyz/nebula-icon-library-loader"))()
     WindUI.Creator.AddIcons("fluency",    NebulaIcons.Fluency)
@@ -886,5 +873,3 @@ do
         Icon = "nebula:nebula",
     })
 end
-
--- End of file
