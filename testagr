@@ -107,12 +107,13 @@ local Window = WindUI:CreateWindow({
 Window:Tag({
     Title = "v0.0.5",
     Icon = "github",
-    Color = Purple
+    Color = Color3.fromHex("#4f28bd")
 })
 
 Window:Tag({
     Title = "sanctuaryangels",
     Icon = "logo-youtube-small",
+    Color3.fromHex("#080707")
 })
 
 local Purple = Color3.fromHex("#7775F2")
