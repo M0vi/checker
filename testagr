@@ -106,7 +106,7 @@ local Window = WindUI:CreateWindow({
 
 Window:Tag({
     Title = "europaaaaaaaaaa",
-    Icon = "logo-gitlab",
+    Icon = "geist:logo-gitlab",
 })
 
 Window:Tag({
