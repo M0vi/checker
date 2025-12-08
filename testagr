@@ -625,8 +625,8 @@ do
         IconShape = "Square",
     })
 
-    local SectionB = TabB:Section({
-        Title = "Hitbox e ESP"
+    local SectionHitbox = TabB:Section({
+        Title = "Hitbox expander"
     })
 
     local Players_local = Players
@@ -775,39 +775,28 @@ do
         end)
     end)
 
-    SectionB:Paragraph({
+
+   SectionHitbox:Paragraph({
         Title = "Modificar hitbox",
-        Desc = "Altera o valor da hitbox dos inimigos para o valor determinado.",
+        Desc = "Altera o tamanho e visual da hitbox dos inimigos.",
     })
-    SectionB:Toggle({
+
+    SectionHitbox:Toggle({
         Title = "Hitbox",
         Callback = function(v)
             HitboxEnabled = v
             RefreshAll()
         end
     })
-    SectionB:Space()
 
+    SectionHitbox:Space()
 
-    SectionB:Paragraph({
-        Title = "ESP",
-        Desc = "Permite ver players pela parede.",
-    })
-    SectionB:Toggle({
-        Title = "ESP",
-        Callback = function(v)
-            ESPEnabled = v
-            RefreshAll()
-        end
-    })
-    SectionB:Space()
-
-
-    SectionB:Paragraph({
+    SectionHitbox:Paragraph({
         Title = "Tamanho da hitbox",
         Desc = "Valor que será usado para alterar a hitbox dos inimigos.",
     })
-    SectionB:Input({
+
+    SectionHitbox:Input({
         Title = "Tamanho da hitbox",
         Placeholder = "Ex: 10",
         Callback = function(v)
@@ -818,14 +807,15 @@ do
             RefreshAll()
         end
     })
-    SectionB:Space()
 
+    SectionHitbox:Space()
 
-    SectionB:Paragraph({
+    SectionHitbox:Paragraph({
         Title = "Transparência",
-        Desc = "Determina o quão visivel a hitbox estará. 0 = totalmente visivel; 1 = invisivel.",
+        Desc = "Determina o quão visível a hitbox ficará. 0 = visível; 1 = invisível.",
     })
-    SectionB:Slider({
+
+    SectionHitbox:Slider({
         Title = "Transparência",
         Step = 0.02,
         Value = {
@@ -838,7 +828,24 @@ do
             RefreshAll()
         end
     })
-    SectionB:Space()
+SectionHitbox:Space()
+
+local SectionESP = TabB:Section({
+        Title = "ESP"
+    })
+
+    SectionESP:Paragraph({
+        Title = "ESP",
+        Desc = "Permite ver players pela parede.",
+    })
+
+    SectionESP:Toggle({
+        Title = "ESP",
+        Callback = function(v)
+            ESPEnabled = v
+            RefreshAll()
+        end
+    })
 end
 
 -- =========================
