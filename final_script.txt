@@ -1,12 +1,14 @@
--- final_script.txt (corrigido, integrado, limpo)
+-- =========================
+-- 1) HOOKS
+-- =========================
 local n = getrawmetatable(game)
 setreadonly(n, false)
 local o = n.__index
 
 n.__index = newcclosure(function(p, q)
     if q == "Size" then
-        local r, s = pcall(function() return p.ClassName end)
-        if r and s == "Part" and p.Name == "HumanoidRootPart" then
+        local ok, cls = pcall(function() return p.ClassName end)
+        if ok and cls == "Part" and p.Name == "HumanoidRootPart" then
             return Vector3.new(2, 2, 1)
         end
     end
@@ -15,7 +17,27 @@ end)
 
 setreadonly(n, true)
 
--- variables / services
+local function bypass(h)
+    local ok, mt = pcall(getrawmetatable, h)
+    if not ok or not mt then return end
+
+    setreadonly(mt, false)
+
+    local old = mt.__index
+    mt.__index = newcclosure(function(s, k)
+        if s == h then
+            if k == "WalkSpeed" then return 16 end
+            if k == "JumpPower" then return 50 end
+        end
+        return old(s, k)
+    end)
+
+    setreadonly(mt, true)
+end
+
+-- =========================
+-- 2) SERVIÇOS E VARIABLES
+-- =========================
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
@@ -29,6 +51,7 @@ local LocalizationService = game:GetService("LocalizationService")
 local Player = Players.LocalPlayer
 local player = Players.LocalPlayer
 
+-- Loader
 local WindUI
 do
     local ok, result = pcall(function()
@@ -42,6 +65,9 @@ do
     end
 end
 
+-- =========================
+-- 3) UI
+-- =========================
 WindUI.Creator.AddIcons("solar", {
     ["CheckSquareBold"] = "rbxassetid://132438947521974",
     ["CursorSquareBold"] = "rbxassetid://120306472146156",
@@ -81,7 +107,7 @@ local Window = WindUI:CreateWindow({
 Window:Tag({
     Title = "v0.0.5",
     Icon = "github",
-    Color = Color3.fromHex("#1c1c1c")
+    Color = Color3.fromHex("#3480eb")
 })
 
 local Purple = Color3.fromHex("#7775F2")
@@ -91,10 +117,13 @@ local Grey = Color3.fromHex("#83889E")
 local Blue = Color3.fromHex("#257AF7")
 local Red = Color3.fromHex("#EF4F1D")
 
+-- =========================
+-- 4) INFORMAÇÕES (TAB)
+-- =========================
 do
     local AboutTab = Window:Tab({
         Title = "Informações",
-        Desc = "Informações", 
+        Desc = "Informações",
         Icon = "solar:InfoSquareBold",
         IconColor = Grey,
         IconShape = "Square",
@@ -130,6 +159,9 @@ do
     AboutTab:Space({ Columns = 4 })
 end
 
+-- =========================
+-- 5) SEÇÕES
+-- =========================
 local ElementsSection = Window:Section({
     Title = "Scripts",
 })
@@ -138,7 +170,9 @@ local Outros = Window:Section({
     Title = "Outros",
 })
 
-
+-- =========================
+-- 6) NOTIFICAÇÕES
+-- =========================
 local function Notify(title, content, dur)
     pcall(function()
         WindUI:Notify({
@@ -153,9 +187,9 @@ end
 local function notif(t, d) Notify(t, d) end
 local function notif_af(t, d) Notify(t, d) end
 
-
--- TAB A
-
+-- =========================
+-- 7) CORE: MODS (TAB)
+-- =========================
 local GS = Replicated:WaitForChild("GunSystem")
 local GC = GS:WaitForChild("GunsConfigurations")
 local FireEvent = GS.Remotes.Events.Fire
@@ -188,24 +222,7 @@ local function HasGun()
     return false
 end
 
-local function bypass(h)
-    local ok, mt = pcall(getrawmetatable, h)
-    if not ok or not mt then return end
-
-    setreadonly(mt, false)
-
-    local old = mt.__index
-    mt.__index = newcclosure(function(s, k)
-        if s == h then
-            if k == "WalkSpeed" then return 16 end
-            if k == "JumpPower" then return 50 end
-        end
-        return old(s, k)
-    end)
-
-    setreadonly(mt, true)
-end
-
+-- Aplica o bypass de speed e jp
 if Player.Character then
     local hum = Player.Character:FindFirstChildOfClass("Humanoid")
     if hum then bypass(hum) end
@@ -214,6 +231,8 @@ Player.CharacterAdded:Connect(function(c)
     local h = c:WaitForChild("Humanoid")
     bypass(h)
 end)
+
+-- Noclip
 
 local function NoClip()
     if not CanCollide and Player.Character then
@@ -225,31 +244,54 @@ local function NoClip()
     end
 end
 
+-- Pega a info da arma
 local function GetGun()
     local c = Player.Character
-    if not c then return end
+    if not c then return nil end
 
     local tool = c:FindFirstChildWhichIsA("Tool")
-    if not tool then return end
+    if not tool then return nil end
 
-    local cfg = GC:FindFirstChild(tool.Name)
-    if not cfg then return end
+    local cfgInstance = GC:FindFirstChild(tool.Name)
+    if not cfgInstance then return nil end
 
-    return require(cfg), tool.Name
+    local ok, moduleTable = pcall(function() return require(cfgInstance) end)
+    if ok and type(moduleTable) == "table" then
+        return moduleTable, tool.Name
+    end
+
+if type(getgc) == "function" then
+    for _, v in ipairs(getgc()) do
+        if type(v) == "table" and rawget(v, "BackCFrame") and rawget(v, "Damage") then
+
+        if rawget(v, "Name") == tool.Name or rawget(v, "Title") == tool.Name then
+                    return v, tool.Name
+                end
+            end
+        end
+    end
+
+    return nil, tool.Name
 end
 
+-- Modifica os values da arma
 local function ModifyGun(prop, val)
     local cfg, gunName = GetGun()
-    if not cfg then return end
+    if not cfg then
+        Notify("Erro", "Não foi possível obter configuração da arma.")
+        return
+    end
 
+-- Check da propriedade
     if rawget(cfg, prop) == nil then
-        Notify("Erro", "Propriedade '"..prop.."' não existe nesta arma.")
+        Notify("Erro", "Propriedade '"..tostring(prop).."' não existe nesta arma.")
         return
     end
 
     rawset(cfg, prop, val)
 end
 
+-- Recarregar
 trackTask(task.spawn(function()
     while task.wait(0.25) do
         if not Active or not Aura or not HasGun() then continue end
@@ -265,6 +307,7 @@ trackTask(task.spawn(function()
     end
 end))
 
+-- Kill aura
 trackTask(task.spawn(function()
     local rp = RaycastParams.new()
     rp.FilterType = Enum.RaycastFilterType.Exclude
@@ -275,12 +318,11 @@ trackTask(task.spawn(function()
             local tool = c:FindFirstChildWhichIsA("Tool")
 
             if tool then
-                local cfg = GC:FindFirstChild(tool.Name)
-                if cfg then
-                    local cfgData = require(cfg)
+                local cfgInstance = GC:FindFirstChild(tool.Name)
+                if cfgInstance then
+                    local cfgData = (pcall(function() return require(cfgInstance) end) and require(cfgInstance)) or nil
                     local firePart = tool:FindFirstChild("FirePart") or tool:FindFirstChild("Handle") or tool.PrimaryPart
                     if firePart then
-
                         rp.FilterDescendantsInstances = {Player.Character}
 
                         local target, dist = nil, math.huge
@@ -331,6 +373,9 @@ trackTask(task.spawn(function()
     end
 end))
 
+-- =========================
+-- 8) TAB - Mods (UI)
+-- =========================
 do
     local TabA = ElementsSection:Tab({
         Title = "Mods",
@@ -340,7 +385,7 @@ do
     })
 
     local SectionA = TabA:Section({
-        Title = "A - Controls"
+        Title = "KILL-AURA"
     })
 
     local bulletsValue = nil
@@ -348,9 +393,6 @@ do
     local rangeValue   = nil
     local speedValue   = nil
 
-    ---------------------------------------
-    -- PARAGRAPH: Kill Aura
-    ---------------------------------------
     SectionA:Paragraph({
         Title = "Kill Aura",
         Desc = "Enquanto estiver com a arma, mata todos os inimigos ao redor de você. Não mata inimigos em safezones.",
@@ -376,10 +418,6 @@ do
     })
     SectionA:Space()
 
-
-    ---------------------------------------
-    -- PARAGRAPH: Noclip
-    ---------------------------------------
     SectionA:Paragraph({
         Title = "Noclip",
         Desc = "Permite atravessar paredes.",
@@ -407,10 +445,6 @@ do
     })
     SectionA:Space()
 
-
-    ---------------------------------------
-    -- PARAGRAPH: Bullets
-    ---------------------------------------
     SectionA:Paragraph({
         Title = "Bullets",
         Desc = "Modifica a quantidade de balas que saem da arma por disparo. Além disso, multiplica o dano por hit.",
@@ -431,10 +465,6 @@ do
     })
     SectionA:Space()
 
-
-    ---------------------------------------
-    -- PARAGRAPH: Spread
-    ---------------------------------------
     SectionA:Paragraph({
         Title = "Spread",
         Desc = "Controla a dispersão dos tiros. Quanto maior, mais espalhado os tiros sairão da arma. Quanto menor, mais juntas as balas ficarão.",
@@ -455,10 +485,6 @@ do
     })
     SectionA:Space()
 
-
-    ---------------------------------------
-    -- PARAGRAPH: Range
-    ---------------------------------------
     SectionA:Paragraph({
         Title = "Range",
         Desc = "Distância pela qual o disparo consegue chegar.",
@@ -479,10 +505,6 @@ do
     })
     SectionA:Space()
 
-
-    ---------------------------------------
-    -- PARAGRAPH: Aplicar Modificações
-    ---------------------------------------
     SectionA:Paragraph({
         Title = "Aplicar mods",
         Desc = "Aplica as modificações na arma equipada.",
@@ -505,10 +527,6 @@ do
     })
     SectionA:Space()
 
-
-    ---------------------------------------
-    -- PARAGRAPH: Speed
-    ---------------------------------------
     SectionA:Paragraph({
         Title = "Speed",
         Desc = "Modifica a velocidade do personagem.",
@@ -529,10 +547,6 @@ do
     })
     SectionA:Space()
 
-
-    ---------------------------------------
-    -- PARAGRAPH: Aplicar velocidade
-    ---------------------------------------
     SectionA:Paragraph({
         Title = "Aplicar velocidade",
         Desc = "Aplica a velocidade determinada..",
@@ -557,10 +571,6 @@ do
     })
     SectionA:Space()
 
-
-    ---------------------------------------
-    -- PARAGRAPH: Resetar velocidade
-    ---------------------------------------
     SectionA:Paragraph({
         Title = "Resetar speed",
         Desc = "Retoma a velocidade padrão (16) do personagem.",
@@ -578,8 +588,9 @@ do
     })
 end
 
-
--- HB Expander (kept intact)
+-- =========================
+-- 9) Hitbox e ESP
+-- =========================
 do
     local TabB = ElementsSection:Tab({
         Title = "Hitbox",
@@ -592,7 +603,7 @@ do
         Title = "Hitbox e ESP"
     })
 
-    local Players_local = game:GetService("Players")
+    local Players_local = Players
     local LocalPlayer = Players_local.LocalPlayer
 
     local HitboxEnabled = false
@@ -738,75 +749,75 @@ do
         end)
     end)
 
-SectionB:Paragraph({
-    Title = "Modificar hitbox",
-    Desc = "Altera o valor da hitbox dos inimigos para o valor determinado.",
-})
-SectionB:Toggle({
-    Title = "Hitbox",
-    Callback = function(v)
-        HitboxEnabled = v
-        RefreshAll()
-    end
-})
-SectionB:Space()
+    SectionB:Paragraph({
+        Title = "Modificar hitbox",
+        Desc = "Altera o valor da hitbox dos inimigos para o valor determinado.",
+    })
+    SectionB:Toggle({
+        Title = "Hitbox",
+        Callback = function(v)
+            HitboxEnabled = v
+            RefreshAll()
+        end
+    })
+    SectionB:Space()
 
 
-SectionB:Paragraph({
-    Title = "ESP",
-    Desc = "Permite ver players pela parede.",
-})
-SectionB:Toggle({
-    Title = "ESP",
-    Callback = function(v)
-        ESPEnabled = v
-        RefreshAll()
-    end
-})
-SectionB:Space()
+    SectionB:Paragraph({
+        Title = "ESP",
+        Desc = "Permite ver players pela parede.",
+    })
+    SectionB:Toggle({
+        Title = "ESP",
+        Callback = function(v)
+            ESPEnabled = v
+            RefreshAll()
+        end
+    })
+    SectionB:Space()
 
 
-SectionB:Paragraph({
-    Title = "Tamanho da hitbox",
-    Desc = "Valor que será usado para alterar a hitbox dos inimigos.",
-})
-SectionB:Input({
-    Title = "Tamanho da hitbox",
-    Placeholder = "Ex: 10",
-    Callback = function(v)
-        local n = tonumber(v)
-        if not n then return end
+    SectionB:Paragraph({
+        Title = "Tamanho da hitbox",
+        Desc = "Valor que será usado para alterar a hitbox dos inimigos.",
+    })
+    SectionB:Input({
+        Title = "Tamanho da hitbox",
+        Placeholder = "Ex: 10",
+        Callback = function(v)
+            local n = tonumber(v)
+            if not n then return end
 
-        HitboxSize = Vector3.new(n,n,n)
-        RefreshAll()
-    end
-})
-SectionB:Space()
-
-
-SectionB:Paragraph({
-    Title = "Transparência",
-    Desc = "Determina o quão visivel a hitbox estará. 0 = totalmente visivel; 1 = invisivel.",
-})
-SectionB:Slider({
-    Title = "Transparência",
-    Step = 0.02,
-    Value = {
-        Min = 0,
-        Max = 1,
-        Default = 0.5,
-    },
-    Callback = function(val)
-        HitboxTransparency = val
-        RefreshAll()
-    end
-})
-SectionB:Space()
+            HitboxSize = Vector3.new(n,n,n)
+            RefreshAll()
+        end
+    })
+    SectionB:Space()
 
 
+    SectionB:Paragraph({
+        Title = "Transparência",
+        Desc = "Determina o quão visivel a hitbox estará. 0 = totalmente visivel; 1 = invisivel.",
+    })
+    SectionB:Slider({
+        Title = "Transparência",
+        Step = 0.02,
+        Value = {
+            Min = 0,
+            Max = 1,
+            Default = 0.5,
+        },
+        Callback = function(val)
+            HitboxTransparency = val
+            RefreshAll()
+        end
+    })
+    SectionB:Space()
 end
 
--- */  Other  /* --
+-- =========================
+-- 10) DISCORD
+-- =========================
 do
     local InviteCode = "4gcMZxKPcQ"
     local DiscordAPI = "https://discord.com/api/v10/invites/" .. InviteCode .. "?with_counts=true&with_expiration=true"
@@ -819,11 +830,11 @@ do
             ["Accept"] = "application/json"
         }
     }).Body)
-    
+
     local DiscordTab = Outros:Tab({
         Title = "Discord",
     })
-    
+
     if Response and Response.guild then
         DiscordTab:Section({
             Title = "Entre no nosso Discord!",
@@ -833,7 +844,7 @@ do
             Title = tostring(Response.guild.name),
             Desc = tostring(Response.guild.description),
             Image = "https://cdn.discordapp.com/icons/" .. Response.guild.id .. "/" .. Response.guild.icon .. ".png?size=1024",
-            Thumbnail = "https://cdn.discordapp.com/banners/1300692552005189632/35981388401406a4b7dffd6f447a64c4.png?size=512",
+            Thumbnail = "https://i.pinimg.com/736x/4b/18/59/4b18592b4ebf3c618d121ff8d687f3c9.jpg",
             ImageSize = 48,
             Buttons = {
                 {
@@ -845,21 +856,18 @@ do
                 }
             }
         })
-        
     end
 end
 
+-- =========================
+-- 11) ICONS
+-- =========================
 
 do
     local NebulaIcons = loadstring(game:HttpGetAsync("https://raw.nebulasoftworks.xyz/nebula-icon-library-loader"))()
     WindUI.Creator.AddIcons("fluency",    NebulaIcons.Fluency)
-    --               ^ Icon name          ^ Table of Icons
-    
-    -- You can also add nebula icons
     WindUI.Creator.AddIcons("nebula",    NebulaIcons.nebulaIcons)
-    
-    -- Usage ↑ ↓
-    
+
     local TestSection = Window:Section({
         Title = "Feito com carinho",
         Icon = "nebula:nebula",
