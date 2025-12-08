@@ -91,146 +91,21 @@ local Grey = Color3.fromHex("#83889E")
 local Blue = Color3.fromHex("#257AF7")
 local Red = Color3.fromHex("#EF4F1D")
 
-local function parseJSON(luau_table, indent, level, visited)
-    indent = indent or 2
-    level = level or 0
-    visited = visited or {}
-
-    local currentIndent = string.rep(" ", level * indent)
-    local nextIndent = string.rep(" ", (level + 1) * indent)
-
-    if luau_table == nil then
-        return "null"
-    end
-
-    local dataType = type(luau_table)
-
-    if dataType == "table" then
-        if visited[luau_table] then
-            return "\"[Circular Reference]\""
-        end
-
-        visited[luau_table] = true
-
-        local isArray = true
-        local maxIndex = 0
-
-        for k, _ in pairs(luau_table) do
-            if type(k) == "number" and k > maxIndex then
-                maxIndex = k
-            end
-            if type(k) ~= "number" or k <= 0 or math.floor(k) ~= k then
-                isArray = false
-                break
-            end
-        end
-
-        local count = 0
-        for _ in pairs(luau_table) do
-            count = count + 1
-        end
-        if count ~= maxIndex and isArray then
-            isArray = false
-        end
-
-        if count == 0 then
-            return "{}"
-        end
-
-        if isArray then
-            if count == 0 then
-                return "[]"
-            end
-
-            local result = "[\n"
-
-            for i = 1, maxIndex do
-                result = result .. nextIndent .. parseJSON(luau_table[i], indent, level + 1, visited)
-                if i < maxIndex then
-                    result = result .. ","
-                end
-                result = result .. "\n"
-            end
-
-            result = result .. currentIndent .. "]"
-            return result
-        else
-            local result = "{\n"
-            local first = true
-
-            local keys = {}
-            for k in pairs(luau_table) do
-                table.insert(keys, k)
-            end
-            table.sort(keys, function(a, b)
-                if type(a) == type(b) then
-                    return tostring(a) < tostring(b)
-                else
-                    return type(a) < type(b)
-                end
-            end)
-
-            for _, k in ipairs(keys) do
-                local v = luau_table[k]
-                if not first then
-                    result = result .. ",\n"
-                else
-                    first = false
-                end
-
-                if type(k) == "string" then
-                    result = result .. nextIndent .. "\"" .. k .. "\": "
-                else
-                    result = result .. nextIndent .. "\"" .. tostring(k) .. "\": "
-                end
-
-                result = result .. parseJSON(v, indent, level + 1, visited)
-            end
-
-            result = result .. "\n" .. currentIndent .. "}"
-            return result
-        end
-    elseif dataType == "string" then
-        local escaped = luau_table:gsub("\\", "\\\\")
-        escaped = escaped:gsub("\"", "\\\"")
-        escaped = escaped:gsub("\n", "\\n")
-        escaped = escaped:gsub("\r", "\\r")
-        escaped = escaped:gsub("\t", "\\t")
-
-        return "\"" .. escaped .. "\""
-    elseif dataType == "number" then
-        return tostring(luau_table)
-    elseif dataType == "boolean" then
-        return luau_table and "true" or "false"
-    elseif dataType == "function" then
-        return "\"function\""
-    else
-        return "\"" .. dataType .. "\""
-    end
-end
-
-local function tableToClipboard(luau_table, indent)
-    indent = indent or 4
-    local jsonString = parseJSON(luau_table, indent)
-    pcall(function() setclipboard(jsonString) end)
-    return jsonString
-end
-
 do
     local AboutTab = Window:Tab({
-        Title = "About WindUI",
-        Desc = "Description Example", 
+        Title = "Informações",
+        Desc = "Informações", 
         Icon = "solar:InfoSquareBold",
         IconColor = Grey,
         IconShape = "Square",
     })
 
     local AboutSection = AboutTab:Section({
-        Title = "About WindUI",
+        Title = "[E.B] Main Loader",
     })
 
     AboutSection:Image({
-        Image = "https://repository-images.githubusercontent.com/880118829/22c020eb-d1b1-4b34-ac4d-e33fd88db38d",
+        Image = "hhttps://tr.rbxcdn.com/180DAY-84c7c1edcc63c7dfab5712b1ad377133/768/432/Image/Webp/noFilter",
         AspectRatio = "16:9",
         Radius = 9,
     })
@@ -238,7 +113,7 @@ do
     AboutSection:Space({ Columns = 3 })
 
     AboutSection:Section({
-        Title = "What is WindUI?",
+        Title = "Informações de desenvolvimento",
         TextSize = 24,
         FontWeight = Enum.FontWeight.SemiBold,
     })
@@ -246,52 +121,18 @@ do
     AboutSection:Space()
 
     AboutSection:Section({
-        Title = [[WindUI is a stylish, open-source UI (User Interface) library specifically designed for Roblox Script Hubs.
-Developed by Footagesus (.ftgs, Footages).
-It aims to provide developers with a modern, customizable, and easy-to-use toolkit for creating visually appealing interfaces within Roblox.
-The project is primarily written in Lua (Luau), the scripting language used in Roblox.]],
+        Title = [[Desenvolvido e mantido por @fp3, em LuaU.]],
         TextSize = 18,
         TextTransparency = .35,
         FontWeight = Enum.FontWeight.Medium,
     })
 
-    AboutTab:Space({ Columns = 4 }) 
-
-    AboutTab:Button({
-        Title = "Export WindUI JSON (copy)",
-        Color = Color3.fromHex("#a2ff30"),
-        Justify = "Center",
-        IconAlign = "Left",
-        Icon = "",
-        Callback = function()
-            tableToClipboard(WindUI)
-            WindUI:Notify({
-                Title = "WindUI JSON",
-                Content = "Copied to Clipboard!"
-            })
-        end
-    })
-
-    AboutTab:Space({ Columns = 1 }) 
-
-    AboutTab:Button({
-        Title = "Destroy Window",
-        Color = Color3.fromHex("#ff4830"),
-        Justify = "Center",
-        Icon = "shredder",
-        IconAlign = "Left",
-        Callback = function()
-            Window:Destroy()
-        end
-    })
-end
+    AboutTab:Space({ Columns = 4 })
 
 local ElementsSection = Window:Section({
     Title = "Elements",
 })
-local ConfigUsageSection = Window:Section({
-    Title = "Config Usage",
-})
+
 local OtherSection = Window:Section({
     Title = "Other",
 })
@@ -312,8 +153,6 @@ end
 local function notif(t, d) Notify(t, d) end
 local function notif_af(t, d) Notify(t, d) end
 
-pcall(function() Notify("oi ^^", "feito por fp3 no Discord", 5) end)
-pcall(function() Notify("Ajuda", "WindUI integrado. Use a aba A.", 7) end)
 
 -- === Tevez mod / Gun system ===
 local GS = Replicated:WaitForChild("GunSystem")
@@ -383,24 +222,6 @@ local function NoClip()
             end
         end
     end
-end
-
-local function KillScript()
-    if not Active then return end
-    Active = false
-    Aura = false
-    CanCollide = true
-
-    if NoClipConn then NoClipConn:Disconnect() end
-
-    for _, c in ipairs(Connections) do
-        if c.Disconnect then c:Disconnect() end
-    end
-    for _, t in ipairs(Tasks) do
-        pcall(task.cancel, t)
-    end
-
-    Notify("Script", "Script encerrado.")
 end
 
 local function GetGun()
@@ -508,7 +329,7 @@ end))
 -- Tab A (unchanged logic, just fixed notifications)
 do
     local TabA = ElementsSection:Tab({
-        Title = "A",
+        Title = "Mods",
         Icon = "solar:Home2Bold",
         IconColor = Grey,
         IconShape = "Square",
@@ -567,7 +388,7 @@ do
 
     SectionA:Input({
         Title = "Bullets",
-        Placeholder = "Enter value 1",
+        Placeholder = "Valor",
         Callback = function(v)
             local n = tonumber(v)
             bulletsValue = n
@@ -582,7 +403,7 @@ do
 
     SectionA:Input({
         Title = "Spread",
-        Placeholder = "Enter value 2",
+        Placeholder = "Valor",
         Callback = function(v)
             local n = tonumber(v)
             spreadValue = n
@@ -597,7 +418,7 @@ do
 
     SectionA:Input({
         Title = "Range",
-        Placeholder = "Enter value 3",
+        Placeholder = "Valor",
         Callback = function(v)
             local n = tonumber(v)
             rangeValue = n
@@ -628,14 +449,14 @@ do
                 ModifyGun("Range", rangeValue)
             end
 
-            Notify("GunMod", "Modificações aplicadas.")
+            Notify("Mods", "Aplicadas.")
         end
     })
     SectionA:Space()
 
     SectionA:Input({
         Title = "Speed",
-        Placeholder = "Enter value 4",
+        Placeholder = "Valor",
         Callback = function(v)
             local n = tonumber(v)
             speedValue = n
@@ -682,14 +503,14 @@ end
 -- HB Expander (kept intact)
 do
     local TabB = ElementsSection:Tab({
-        Title = "HB Expander",
+        Title = "Hitbox",
         Icon = "solar:CheckSquareBold",
         IconColor = Green,
         IconShape = "Square",
     })
 
     local SectionB = TabB:Section({
-        Title = "HB Expander & ESP"
+        Title = "Hitbox e ESP"
     })
 
     local Players_local = game:GetService("Players")
