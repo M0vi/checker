@@ -865,34 +865,35 @@ do
     }).Body)
 
     local DiscordTab = Outros:Tab({
-        Title = "Discord",
-        Icon = "geist:logo-discord",
-        IconColor = Blue,
-        IconShape = "Square",
+    Title = "Discord",
+    Icon = "geist:logo-discord",
+    IconColor = Blue,
+    IconShape = "Square",
+})
+
+if Response and Response.guild then
+    DiscordTab:Section({
+        Title = "Entre no nosso Discord!",
+        TextSize = 20,
     })
 
-    if Response and Response.guild then
-        DiscordTab:Section({
-            Title = "Entre no nosso Discord!",
-            TextSize = 20,
-        })
-        local DiscordServerParagraph = DiscordTab:Paragraph({
-            Title = tostring(Response.guild.name),
-            Desc = tostring(Response.guild.description),
-            Image = "https://cdn.discordapp.com/icons/" .. Response.guild.id .. "/" .. Response.guild.icon .. ".png?size=1024",
-            Thumbnail = "https://i.pinimg.com/736x/4b/18/59/4b18592b4ebf3c618d121ff8d687f3c9.jpg",
-            ImageSize = 80,
-            Buttons = {
-                {
-                    Title = "Copiar link!",
-                    Icon = "link",
-                    Callback = function()
-                        setclipboard("https://discord.gg/" .. InviteCode)
-                    end
-                }
+    DiscordTab:Paragraph({
+        Title = tostring(Response.guild.name),
+        Desc = tostring(Response.guild.description),
+        Image = "https://cdn.discordapp.com/icons/" .. Response.guild.id .. "/" .. Response.guild.icon .. ".png?size=1024",
+        Thumbnail = "https://i.pinimg.com/736x/4b/18/59/4b18592b4ebf3c618d121ff8d687f3c9.jpg",
+        ImageSize = 80,
+        Buttons = {
+            {
+                Title = "Copiar link!",
+                Icon = "link",
+                Callback = function()
+                    setclipboard("https://discord.gg/" .. InviteCode)
+                end
             }
-        })
-    end
+        }
+    })
+end
 
 -- =========================
 -- 11) ICONS
