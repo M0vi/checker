@@ -870,14 +870,13 @@ do
     local DiscordTab = Outros:Tab({
     Title = "Discord",
     Icon = "geist:logo-discord",
-    IconColor = Blue,
-    IconShape = "Square",
+    IconColor = Blue
 })
 
 if Response and Response.guild then
     DiscordTab:Section({
-        Title = "Entre no nosso Discord!",
-        TextSize = 20,
+        Title = "Entre em nosso Discord!",
+        TextSize = 30,
     })
 
     DiscordTab:Paragraph({
@@ -905,6 +904,7 @@ end
 do
     local TestSection = Window:Section({
         Title = "Feito com carinho",
-        Icon = "geist:heart-fill"
+        Icon = "geist:heart-fill",
+        IconColor = Red
     })
 end
