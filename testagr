@@ -380,8 +380,8 @@ end))
 do
     local TabA = ElementsSection:Tab({
         Title = "Mods",
-        Icon = "solar:Home2Bold",
-        IconColor = Grey,
+        Icon = "geist:robot",
+        IconColor = Blue,
         IconShape = "Square",
     })
 
@@ -620,7 +620,7 @@ end
 do
     local TabB = ElementsSection:Tab({
         Title = "Hitbox",
-        Icon = "solar:CheckSquareBold",
+        Icon = "lucide:person-standing",
         IconColor = Green,
         IconShape = "Square",
     })
