@@ -105,7 +105,7 @@ do
     })
 
     AboutSection:Image({
-        Image = "https://tr.rbxcdn.com/180DAY-84c7c1edcc63c7dfab5712b1ad377133/768/432/Image/Webp/noFilter",
+        Image = "https://i.pinimg.com/736x/a6/69/ab/a669aba94931a9c23607916fb5516209.jpg",
         AspectRatio = "16:9",
         Radius = 9,
     })
@@ -121,7 +121,7 @@ do
     AboutSection:Space()
 
     AboutSection:Section({
-        Title = [[Desenvolvido e mantido por @fp3, em LuaU.]],
+        Title = [[Desenvolvido e mantido por @fp3, em LuaU. Isso é apenas um hobby!]],
         TextSize = 18,
         TextTransparency = .35,
         FontWeight = Enum.FontWeight.Medium,
@@ -349,7 +349,7 @@ do
     ---------------------------------------
     SectionA:Paragraph({
         Title = "Kill Aura",
-        Desc = "Ativa ataques automáticos no inimigo mais próximo sempre que você estiver com uma arma equipada.",
+        Desc = "Enquanto estiver com a arma, mata todos os inimigos ao redor de você. Não mata inimigos em safezones.",
     })
 
     SectionA:Toggle({
@@ -378,7 +378,7 @@ do
     ---------------------------------------
     SectionA:Paragraph({
         Title = "Noclip",
-        Desc = "Permite atravessar paredes enquanto ativo.",
+        Desc = "Permite atravessar paredes.",
     })
 
     SectionA:Toggle({
@@ -390,14 +390,14 @@ do
                     pcall(function() NoClipConn:Disconnect() end)
                 end
                 NoClipConn = RunService.Stepped:Connect(NoClip)
-                Notify("Noclip", "Noclip ON")
+                Notify("Noclip", "[NOCLIP] Ativado")
             else
                 CanCollide = true
                 if NoClipConn then
                     pcall(function() NoClipConn:Disconnect() end)
                     NoClipConn = nil
                 end
-                Notify("Noclip", "Noclip OFF")
+                Notify("Noclip", "[NOCLIP] Desativado")
             end
         end
     })
@@ -409,7 +409,7 @@ do
     ---------------------------------------
     SectionA:Paragraph({
         Title = "Bullets",
-        Desc = "Modifica a quantidade de projéteis por disparo da arma atual.",
+        Desc = "Modifica a quantidade de balas que saem da arma por disparo. Além disso, multiplica o dano por hit.",
     })
 
     SectionA:Input({
@@ -419,9 +419,9 @@ do
             local n = tonumber(v)
             bulletsValue = n
             if n then
-                Notify("Bullets", "Valor salvo: "..tostring(n))
+                Notify("Bullets", "Valor: "..tostring(n))
             else
-                Notify("Bullets", "Valor inválido")
+                Notify("Bullets", "Inválido")
             end
         end
     })
@@ -433,7 +433,7 @@ do
     ---------------------------------------
     SectionA:Paragraph({
         Title = "Spread",
-        Desc = "Controla a dispersão dos tiros. Quanto menor, mais preciso.",
+        Desc = "Controla a dispersão dos tiros. Quanto maior, mais espalhado os tiros sairão da arma. Quanto menor, mais juntas as balas ficarão.",
     })
 
     SectionA:Input({
@@ -443,9 +443,9 @@ do
             local n = tonumber(v)
             spreadValue = n
             if n then
-                Notify("Spread", "Valor salvo: "..tostring(n))
+                Notify("Spread", "Valor: "..tostring(n))
             else
-                Notify("Spread", "Valor inválido")
+                Notify("Spread", "Inválido")
             end
         end
     })
@@ -457,7 +457,7 @@ do
     ---------------------------------------
     SectionA:Paragraph({
         Title = "Range",
-        Desc = "Define a distância máxima do projétil da arma.",
+        Desc = "Distância pela qual o disparo consegue chegar.",
     })
 
     SectionA:Input({
@@ -467,9 +467,9 @@ do
             local n = tonumber(v)
             rangeValue = n
             if n then
-                Notify("Range", "Valor salvo: "..tostring(n))
+                Notify("Range", "Valor: "..tostring(n))
             else
-                Notify("Range", "Valor inválido")
+                Notify("Range", "Inválido")
             end
         end
     })
@@ -480,15 +480,15 @@ do
     -- PARAGRAPH: Aplicar Modificações
     ---------------------------------------
     SectionA:Paragraph({
-        Title = "Aplicar modificações",
-        Desc = "Aplica todos os valores colocados acima na sua arma equipada.",
+        Title = "Aplicar mods",
+        Desc = "Aplica as modificações na arma equipada.",
     })
 
     SectionA:Button({
-        Title = "Modificar",
+        Title = "Aplicar mods",
         Callback = function()
             if not HasGun() then
-                Notify("Erro", "Você precisa de uma arma para modificar.")
+                Notify("Erro", "Equipe uma arma para modificar.")
                 return
             end
 
@@ -496,7 +496,7 @@ do
             if spreadValue then ModifyGun("Spread", spreadValue) end
             if rangeValue then ModifyGun("Range", rangeValue) end
 
-            Notify("Mods", "Aplicadas.")
+            Notify("Mods", "Aplicações feitas.")
         end
     })
     SectionA:Space()
@@ -507,7 +507,7 @@ do
     ---------------------------------------
     SectionA:Paragraph({
         Title = "Speed",
-        Desc = "Define a velocidade do seu personagem.",
+        Desc = "Modifica a velocidade do personagem.",
     })
 
     SectionA:Input({
@@ -517,9 +517,9 @@ do
             local n = tonumber(v)
             speedValue = n
             if n then
-                Notify("Speed", "Valor salvo: "..tostring(n))
+                Notify("Speed", "Valor: "..tostring(n))
             else
-                Notify("Speed", "Valor inválido")
+                Notify("Speed", "Inválido")
             end
         end
     })
@@ -531,11 +531,11 @@ do
     ---------------------------------------
     SectionA:Paragraph({
         Title = "Aplicar velocidade",
-        Desc = "Define a velocidade atual do seu humanoid.",
+        Desc = "Aplica a velocidade determinada..",
     })
 
     SectionA:Button({
-        Title = "Aplicar",
+        Title = "Aplicar velocidade",
         Callback = function()
             if not speedValue then
                 Notify("Speed", "Informe um valor válido.")
@@ -547,7 +547,7 @@ do
                 h.WalkSpeed = speedValue
                 Notify("Speed", "Alterada para "..tostring(speedValue))
             else
-                Notify("Speed", "Humanoid não encontrado.")
+                Notify("Speed", "Personagem não encontrado.")
             end
         end
     })
@@ -558,8 +558,8 @@ do
     -- PARAGRAPH: Resetar velocidade
     ---------------------------------------
     SectionA:Paragraph({
-        Title = "Resetar Speed",
-        Desc = "Retorna a velocidade padrão do personagem.",
+        Title = "Resetar speed",
+        Desc = "Retoma a velocidade padrão (16) do personagem.",
     })
 
     SectionA:Button({
@@ -568,7 +568,7 @@ do
             local h = Player.Character and Player.Character:FindFirstChild("Humanoid")
             if h then
                 h.WalkSpeed = WalkSpeedDefault or 16
-                Notify("Speed", "Restaurada para "..tostring(WalkSpeedDefault or 16))
+                Notify("Speed", "Restaurada")
             end
         end
     })
@@ -733,12 +733,13 @@ do
             if ESPEnabled then ApplyESP(plr) end
         end)
     end)
+
 SectionB:Paragraph({
-    Title = "Descrição do Toggle",
-    Desc = "Explique aqui o que 'Ativar Hitbox' faz.",
+    Title = "Modificar hitbox",
+    Desc = "Altera o valor da hitbox dos inimigos para o valor determinado.",
 })
 SectionB:Toggle({
-    Title = "Ativar Hitbox",
+    Title = "Hitbox",
     Callback = function(v)
         HitboxEnabled = v
         RefreshAll()
@@ -748,11 +749,11 @@ SectionB:Space()
 
 
 SectionB:Paragraph({
-    Title = "Descrição do Toggle",
-    Desc = "Explique aqui o que 'Ativar ESP (Drawing API)' faz.",
+    Title = "ESP",
+    Desc = "Permite ver players pela parede.",
 })
 SectionB:Toggle({
-    Title = "Ativar ESP (Drawing API)",
+    Title = "ESP",
     Callback = function(v)
         ESPEnabled = v
         RefreshAll()
@@ -762,12 +763,12 @@ SectionB:Space()
 
 
 SectionB:Paragraph({
-    Title = "Descrição do Input",
-    Desc = "Explique aqui como funciona o tamanho da hitbox e o que o usuário deve digitar.",
+    Title = "Tamanho da hitbox",
+    Desc = "Valor que será usado para alterar a hitbox dos inimigos.",
 })
 SectionB:Input({
-    Title = "Tamanho da Hitbox",
-    Placeholder = "Ex: 5",
+    Title = "Tamanho da hitbox",
+    Placeholder = "Ex: 10",
     Callback = function(v)
         local n = tonumber(v)
         if not n then return end
@@ -780,8 +781,8 @@ SectionB:Space()
 
 
 SectionB:Paragraph({
-    Title = "Descrição do Slider",
-    Desc = "Explique aqui o que é a transparência e como ajustar.",
+    Title = "Transparência",
+    Desc = "Determina o quão visivel a hitbox estará. 0 = totalmente visivel; 1 = invisivel.",
 })
 SectionB:Slider({
     Title = "Transparência",
