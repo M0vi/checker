@@ -586,8 +586,6 @@ do
             end
         end
     })
-end
-
 SectionPlayer:Space()
 
 SectionPlayer:Paragraph({
@@ -615,7 +613,7 @@ SectionPlayer:Paragraph({
             end
         end
     })
-
+end
 -- =========================
 -- 9) Hitbox e ESP
 -- =========================
