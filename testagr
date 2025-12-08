@@ -107,19 +107,19 @@ local Window = WindUI:CreateWindow({
 Window:Tag({
     Title = "europaaaaaaaaaa",
     Icon = "geist:logo-gitlab",
-    Color = Color3.fromHex("#080707")
+    Color = Color3.fromHex("#1c1c1c")
 })
 
 Window:Tag({
     Title = "sanctuaryangels",
-    Icon = "lucide:youtube",
-    Color = Red
+    Icon = "geist:logo-youtube-small",
+    Color = Color3.fromHex("#1c1c1c")
 })
 
 Window:Tag({
     Title = "fp3",
     Icon = "geist:logo-discord",
-    Color = Color3.fromHex("#080707")
+    Color = Color3.fromHex("#1c1c1c")
 })
 
 local Purple = Color3.fromHex("#7775F2")
