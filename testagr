@@ -870,7 +870,6 @@ do
         IconColor = Blue,
         IconShape = "Square",
     })
-    })
 
     if Response and Response.guild then
         DiscordTab:Section({
