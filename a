@@ -344,6 +344,14 @@ do
     local rangeValue   = nil
     local speedValue   = nil
 
+    ---------------------------------------
+    -- PARAGRAPH: Kill Aura
+    ---------------------------------------
+    SectionA:Paragraph({
+        Title = "Kill Aura",
+        Desc = "Ativa ataques automáticos no inimigo mais próximo sempre que você estiver com uma arma equipada.",
+    })
+
     SectionA:Toggle({
         Title = "Kill-aura",
         Callback = function(state)
@@ -363,6 +371,15 @@ do
         end
     })
     SectionA:Space()
+
+
+    ---------------------------------------
+    -- PARAGRAPH: Noclip
+    ---------------------------------------
+    SectionA:Paragraph({
+        Title = "Noclip",
+        Desc = "Permite atravessar paredes enquanto ativo.",
+    })
 
     SectionA:Toggle({
         Title = "Noclip",
@@ -386,6 +403,15 @@ do
     })
     SectionA:Space()
 
+
+    ---------------------------------------
+    -- PARAGRAPH: Bullets
+    ---------------------------------------
+    SectionA:Paragraph({
+        Title = "Bullets",
+        Desc = "Modifica a quantidade de projéteis por disparo da arma atual.",
+    })
+
     SectionA:Input({
         Title = "Bullets",
         Placeholder = "Valor",
@@ -400,6 +426,15 @@ do
         end
     })
     SectionA:Space()
+
+
+    ---------------------------------------
+    -- PARAGRAPH: Spread
+    ---------------------------------------
+    SectionA:Paragraph({
+        Title = "Spread",
+        Desc = "Controla a dispersão dos tiros. Quanto menor, mais preciso.",
+    })
 
     SectionA:Input({
         Title = "Spread",
@@ -416,6 +451,15 @@ do
     })
     SectionA:Space()
 
+
+    ---------------------------------------
+    -- PARAGRAPH: Range
+    ---------------------------------------
+    SectionA:Paragraph({
+        Title = "Range",
+        Desc = "Define a distância máxima do projétil da arma.",
+    })
+
     SectionA:Input({
         Title = "Range",
         Placeholder = "Valor",
@@ -431,6 +475,15 @@ do
     })
     SectionA:Space()
 
+
+    ---------------------------------------
+    -- PARAGRAPH: Aplicar Modificações
+    ---------------------------------------
+    SectionA:Paragraph({
+        Title = "Aplicar modificações",
+        Desc = "Aplica todos os valores colocados acima na sua arma equipada.",
+    })
+
     SectionA:Button({
         Title = "Modificar",
         Callback = function()
@@ -439,20 +492,23 @@ do
                 return
             end
 
-            if bulletsValue then
-                ModifyGun("Bullets", bulletsValue)
-            end
-            if spreadValue then
-                ModifyGun("Spread", spreadValue)
-            end
-            if rangeValue then
-                ModifyGun("Range", rangeValue)
-            end
+            if bulletsValue then ModifyGun("Bullets", bulletsValue) end
+            if spreadValue then ModifyGun("Spread", spreadValue) end
+            if rangeValue then ModifyGun("Range", rangeValue) end
 
             Notify("Mods", "Aplicadas.")
         end
     })
     SectionA:Space()
+
+
+    ---------------------------------------
+    -- PARAGRAPH: Speed
+    ---------------------------------------
+    SectionA:Paragraph({
+        Title = "Speed",
+        Desc = "Define a velocidade do seu personagem.",
+    })
 
     SectionA:Input({
         Title = "Speed",
@@ -468,6 +524,15 @@ do
         end
     })
     SectionA:Space()
+
+
+    ---------------------------------------
+    -- PARAGRAPH: Aplicar velocidade
+    ---------------------------------------
+    SectionA:Paragraph({
+        Title = "Aplicar velocidade",
+        Desc = "Define a velocidade atual do seu humanoid.",
+    })
 
     SectionA:Button({
         Title = "Aplicar",
@@ -488,6 +553,15 @@ do
     })
     SectionA:Space()
 
+
+    ---------------------------------------
+    -- PARAGRAPH: Resetar velocidade
+    ---------------------------------------
+    SectionA:Paragraph({
+        Title = "Resetar Speed",
+        Desc = "Retorna a velocidade padrão do personagem.",
+    })
+
     SectionA:Button({
         Title = "Resetar speed",
         Callback = function()
@@ -499,6 +573,7 @@ do
         end
     })
 end
+
 
 -- HB Expander (kept intact)
 do
@@ -658,51 +733,72 @@ do
             if ESPEnabled then ApplyESP(plr) end
         end)
     end)
+SectionB:Paragraph({
+    Title = "Descrição do Toggle",
+    Desc = "Explique aqui o que 'Ativar Hitbox' faz.",
+})
+SectionB:Toggle({
+    Title = "Ativar Hitbox",
+    Callback = function(v)
+        HitboxEnabled = v
+        RefreshAll()
+    end
+})
+SectionB:Space()
 
-    SectionB:Toggle({
-        Title = "Ativar Hitbox",
-        Callback = function(v)
-            HitboxEnabled = v
-            RefreshAll()
-        end
-    })
-    SectionB:Space()
 
-    SectionB:Toggle({
-        Title = "Ativar ESP (Drawing API)",
-        Callback = function(v)
-            ESPEnabled = v
-            RefreshAll()
-        end
-    })
-    SectionB:Space()
+SectionB:Paragraph({
+    Title = "Descrição do Toggle",
+    Desc = "Explique aqui o que 'Ativar ESP (Drawing API)' faz.",
+})
+SectionB:Toggle({
+    Title = "Ativar ESP (Drawing API)",
+    Callback = function(v)
+        ESPEnabled = v
+        RefreshAll()
+    end
+})
+SectionB:Space()
 
-    SectionB:Input({
-        Title = "Tamanho da Hitbox",
-        Placeholder = "Ex: 5",
-        Callback = function(v)
-            local n = tonumber(v)
-            if not n then return end
 
-            HitboxSize = Vector3.new(n,n,n)
-            RefreshAll()
-        end
-    })
-    SectionB:Space()
+SectionB:Paragraph({
+    Title = "Descrição do Input",
+    Desc = "Explique aqui como funciona o tamanho da hitbox e o que o usuário deve digitar.",
+})
+SectionB:Input({
+    Title = "Tamanho da Hitbox",
+    Placeholder = "Ex: 5",
+    Callback = function(v)
+        local n = tonumber(v)
+        if not n then return end
 
-    SectionB:Slider({
-        Title = "Transparência",
-        Step = 0.02,
-        Value = {
-            Min = 0,
-            Max = 1,
-            Default = 0.5,
-        },
-        Callback = function(val)
-            HitboxTransparency = val
-            RefreshAll()
-        end
-    })
+        HitboxSize = Vector3.new(n,n,n)
+        RefreshAll()
+    end
+})
+SectionB:Space()
+
+
+SectionB:Paragraph({
+    Title = "Descrição do Slider",
+    Desc = "Explique aqui o que é a transparência e como ajustar.",
+})
+SectionB:Slider({
+    Title = "Transparência",
+    Step = 0.02,
+    Value = {
+        Min = 0,
+        Max = 1,
+        Default = 0.5,
+    },
+    Callback = function(val)
+        HitboxTransparency = val
+        RefreshAll()
+    end
+})
+SectionB:Space()
+
+
 end
 
 -- */  Other  /* --
