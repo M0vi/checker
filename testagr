@@ -894,7 +894,7 @@ if Response and Response.guild then
         }
     })
 end
-
+end
 -- =========================
 -- 11) ICONS
 -- =========================
