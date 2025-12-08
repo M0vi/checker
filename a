@@ -128,6 +128,7 @@ do
     })
 
     AboutTab:Space({ Columns = 4 })
+end
 
 local ElementsSection = Window:Section({
     Title = "Elements",
