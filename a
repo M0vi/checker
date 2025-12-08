@@ -239,11 +239,15 @@ local function GetGun()
 end
 
 local function ModifyGun(prop, val)
-    local cfg, name = GetGun()
-    if cfg and cfg[prop] ~= nil then
-        cfg[prop] = val
-        Notify("GunMod", name.." "..prop.." → "..tostring(val))
+    local cfg, gunName = GetGun()
+    if not cfg then return end
+
+    if rawget(cfg, prop) == nil then
+        Notify("Erro", "Propriedade '"..prop.."' não existe nesta arma.")
+        return
     end
+
+    rawset(cfg, prop, val)
 end
 
 trackTask(task.spawn(function()
