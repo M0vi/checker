@@ -108,6 +108,7 @@ Window:Tag({
     Title = "sanctuaryangels",
     Icon = "lucide:youtube",
     Color = Color3.fromHex("#1c1c1c")
+    IconColor = Red
 })
 
 Window:Tag({
