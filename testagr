@@ -81,7 +81,7 @@ WindUI.Creator.AddIcons("solar", {
 })
 
 local Window = WindUI:CreateWindow({
-    Title = "[Exército Brasileiro] Main Loader",
+    Title = "Exército Brasileiro",
     Folder = "fp3",
     IconSize = 22*2,
     NewElements = true,
@@ -113,7 +113,7 @@ Window:Tag({
 Window:Tag({
     Title = "sanctuaryangels",
     Icon = "logo-youtube-small",
-    Color = Color3.fromHex("#ef4f1d")
+    Color = Color3.fromHex("#000000")
 })
 
 local Purple = Color3.fromHex("#7775F2")
