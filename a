@@ -105,7 +105,7 @@ do
     })
 
     AboutSection:Image({
-        Image = "hhttps://tr.rbxcdn.com/180DAY-84c7c1edcc63c7dfab5712b1ad377133/768/432/Image/Webp/noFilter",
+        Image = "https://tr.rbxcdn.com/180DAY-84c7c1edcc63c7dfab5712b1ad377133/768/432/Image/Webp/noFilter",
         AspectRatio = "16:9",
         Radius = 9,
     })
