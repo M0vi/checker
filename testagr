@@ -113,7 +113,6 @@ Window:Tag({
 Window:Tag({
     Title = "sanctuaryangels",
     Icon = "logo-youtube-small",
-    Color = Grey
 })
 
 local Purple = Color3.fromHex("#7775F2")
