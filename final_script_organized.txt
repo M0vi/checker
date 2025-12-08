@@ -1,0 +1,535 @@
+-- final_script_organized.lua
+-- [E.B] fp3 — Final organized loader
+-- Structured, deduplicated and annotated for clarity.
+-- Sections: 1) Services & variables  2) UI init  3) Core utilities  4) Gun mods (getgc/rawset) 5) Kill-aura/Noclip features 6) Hitbox/ESP 7) Helpers & external integrations
+
+-- =========================
+-- 1) SERVICES & VARIABLES
+-- =========================
+local Players            = game:GetService("Players")
+local UIS                = game:GetService("UserInputService")
+local StarterGui         = game:GetService("StarterGui")
+local RunService         = game:GetService("RunService")
+local Replicated         = game:GetService("ReplicatedStorage")
+local TweenService       = game:GetService("TweenService")
+local HttpService        = game:GetService("HttpService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local LocalizationService= game:GetService("LocalizationService")
+
+local Player = Players.LocalPlayer
+local player = Player
+
+-- anti-detection metamethod (example override)
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+local raw_index = mt.__index
+mt.__index = newcclosure(function(p, q)
+    if q == "Size" then
+        local ok, cls = pcall(function() return p.ClassName end)
+        if ok and cls == "Part" and p.Name == "HumanoidRootPart" then
+            return Vector3.new(2,2,1)
+        end
+    end
+    return raw_index(p, q)
+end)
+setreadonly(mt, true)
+
+-- =========================
+-- 2) UI SETUP (WindUI)
+-- =========================
+local WindUI
+do
+    local ok, result = pcall(function() return require("./src/Init") end)
+    if ok then
+        WindUI = result
+    else
+        WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+    end
+end
+
+-- small helper to safely call WindUI icon registration
+pcall(function()
+    WindUI.Creator.AddIcons("solar", {
+        ["CheckSquareBold"] = "rbxassetid://132438947521974",
+        ["CursorSquareBold"] = "rbxassetid://120306472146156",
+        ["FileTextBold"] = "rbxassetid://89294979831077",
+        ["FolderWithFilesBold"] = "rbxassetid://74631950400584",
+        ["HamburgerMenuBold"] = "rbxassetid://134384554225463",
+        ["Home2Bold"] = "rbxassetid://92190299966310",
+        ["InfoSquareBold"] = "rbxassetid://119096461016615",
+        ["PasswordMinimalisticInputBold"] = "rbxassetid://109919668957167",
+        ["SolarSquareTransferHorizontalBold"] = "rbxassetid://125444491429160",
+    })
+end)
+
+local Window = WindUI:CreateWindow({
+    Title = "[E.B] fp3",
+    Folder = "fp3",
+    IconSize = 44,
+    NewElements = true,
+    HideSearchBar = false,
+    OpenButton = {
+        Title = "Menu",
+        CornerRadius = UDim.new(1,0),
+        StrokeThickness = 2,
+        Enabled = true,
+        Draggable = true,
+        OnlyMobile = false,
+        Color = ColorSequence.new(Color3.fromHex("#30FF6A"), Color3.fromHex("#e7ff2f")),
+    },
+    Topbar = { Height = 40, ButtonsType = "Mac" },
+})
+
+Window:Tag({ Title = "v0.0.5", Icon = "github", Color = Color3.fromHex("#1c1c1c") })
+
+-- Color palette
+local Purple = Color3.fromHex("#7775F2")
+local Yellow = Color3.fromHex("#ECA201")
+local Green  = Color3.fromHex("#10C550")
+local Grey   = Color3.fromHex("#83889E")
+local Blue   = Color3.fromHex("#257AF7")
+local Red    = Color3.fromHex("#EF4F1D")
+
+-- About tab (example)
+local AboutTab = Window:Tab({ Title = "Informações", Desc = "Informações", Icon = "solar:InfoSquareBold", IconColor = Grey, IconShape = "Square" })
+local AboutSection = AboutTab:Section({ Title = "[E.B] Main Loader" })
+AboutSection:Image({ Image = "https://i.pinimg.com/736x/a6/69/ab/a669aba94931a9c23607916fb5516209.jpg", AspectRatio = "16:9", Radius = 9 })
+AboutSection:Space({ Columns = 3 })
+AboutSection:Section({ Title = "Informações de desenvolvimento", TextSize = 24, FontWeight = Enum.FontWeight.SemiBold })
+AboutSection:Space()
+AboutSection:Section({ Title = [[Desenvolvido e mantido por @fp3, em LuaU. Isso é apenas um hobby!]], TextSize = 18, TextTransparency = .35, FontWeight = Enum.FontWeight.Medium })
+AboutTab:Space({ Columns = 4 })
+
+local ElementsSection = Window:Section({ Title = "Scripts" })
+local Outros = Window:Section({ Title = "Outros" })
+
+-- Notification wrapper
+local function Notify(title, content, dur)
+    pcall(function()
+        WindUI:Notify({ Title = tostring(title or ""), Content = tostring(content or ""), Duration = dur or 3, Icon = "bird" })
+    end)
+end
+
+-- =========================
+-- 3) CORE: Gun system hooks
+-- =========================
+local GS = Replicated:WaitForChild("GunSystem")
+local GC = GS:WaitForChild("GunsConfigurations")
+local FireEvent = GS.Remotes.Events.Fire
+local ReloadFunction = GS.Remotes.Functions.Reload
+
+local Active = true
+local Aura = false
+local Blocker = false
+local Connections = {}
+local Tasks = {}
+local LastTargetTime = 0
+local WalkSpeedDefault = 16
+local NoClipConn = nil
+local CanCollide = true
+
+local function track(c) table.insert(Connections, c) end
+local function trackTask(t) table.insert(Tasks, t) end
+local function reg(target) LastTargetTime = tick() end
+
+-- HasGun: checks player backpack/character for any gun by comparing names with GC children
+local function HasGun()
+    local bp = Player:FindFirstChild("Backpack")
+    local char = Player.Character
+    for _, cfg in ipairs(GC:GetChildren()) do
+        local n = cfg.Name
+        if (bp and bp:FindFirstChild(n)) or (char and char:FindFirstChild(n)) then
+            return true
+        end
+    end
+    return false
+end
+
+-- bypass: patch humanoid metamethods to return fixed WalkSpeed/JumpPower when inspected
+local function bypass(h)
+    local ok, mt = pcall(getrawmetatable, h)
+    if not ok or not mt then return end
+    setreadonly(mt, false)
+    local old = mt.__index
+    mt.__index = newcclosure(function(s, k)
+        if s == h then
+            if k == "WalkSpeed" then return 16 end
+            if k == "JumpPower" then return 50 end
+        end
+        return old(s, k)
+    end)
+    setreadonly(mt, true)
+end
+
+if Player.Character then
+    local hum = Player.Character:FindFirstChildOfClass("Humanoid")
+    if hum then bypass(hum) end
+end
+Player.CharacterAdded:Connect(function(c) local h = c:WaitForChild("Humanoid") bypass(h) end)
+
+-- NoClip helper
+local function NoClip()
+    if not CanCollide and Player.Character then
+        for _, v in pairs(Player.Character:GetDescendants()) do
+            if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end
+        end
+    end
+end
+
+-- GetGun: attempt to retrieve weapon configuration TABLE using getgc() fallback
+local function GetGun()
+    local c = Player.Character
+    if not c then return nil end
+
+    local tool = c:FindFirstChildWhichIsA("Tool")
+    if not tool then return nil end
+    local toolName = tool.Name
+
+    -- 1) Prefer the existing module instance in ReplicatedStorage if available (non-require path)
+    local cfgInst = GC:FindFirstChild(toolName)
+    if cfgInst then
+        -- try require first (some environments allow it); if it fails, fallback to getgc scan
+        local ok, module = pcall(function() return require(cfgInst) end)
+        if ok and type(module) == "table" then
+            return module, toolName
+        end
+    end
+
+    -- 2) Fallback: scan getgc() for a table that looks like a weapon config
+    local candidates = {}
+    if type(getgc) == "function" then
+        for _, item in ipairs(getgc()) do
+            if type(item) == "table" then
+                -- heuristic: weapon config tables typically contain these keys
+                if rawget(item, "Damage") ~= nil and rawget(item, "Bullets") ~= nil and rawget(item, "Range") ~= nil then
+                    table.insert(candidates, item)
+                end
+            end
+        end
+    end
+
+    -- selection heuristics
+    if #candidates == 1 then return candidates[1], toolName end
+    for _, tbl in ipairs(candidates) do
+        if rawget(tbl, "BackOverride") or rawget(tbl, "Animations") or rawget(tbl, "MagSize") then
+            return tbl, toolName
+        end
+    end
+    if #candidates > 0 then return candidates[1], toolName end
+
+    return nil, toolName
+end
+
+-- ModifyGun: uses rawget/rawset to modify fields safely
+local function ModifyGun(prop, val)
+    local cfg, gunName = GetGun()
+    if not cfg then
+        Notify("Erro", "Configuração da arma não encontrada.")
+        return
+    end
+
+    -- check existence with rawget to avoid metamethods / __index traps
+    if rawget(cfg, prop) == nil then
+        Notify("Erro", "Propriedade '"..tostring(prop).."' não existe nesta arma.")
+        return
+    end
+
+    -- apply using rawset (works on plain tables found via getgc or modules)
+    rawset(cfg, prop, val)
+
+    -- Avoid notifying when modifying Damage per request
+    if prop ~= "Damage" then
+        Notify("GunMod", gunName.." "..tostring(prop).." → "..tostring(val))
+    end
+end
+
+-- Periodic reload invoker (maintains weapon readiness)
+trackTask(task.spawn(function()
+    while task.wait(0.25) do
+        if not Active or not Aura or not HasGun() then continue end
+        local c = Player.Character
+        if not c then continue end
+        local tool = c:FindFirstChildWhichIsA("Tool")
+        if not tool then continue end
+        pcall(function() ReloadFunction:InvokeServer(tool) end)
+    end
+end))
+
+-- Kill-aura firing loop (uses FireEvent to simulate hits)
+trackTask(task.spawn(function()
+    local rp = RaycastParams.new()
+    rp.FilterType = Enum.RaycastFilterType.Exclude
+
+    while Active do
+        if Aura and HasGun() and Player.Character then
+            local c = Player.Character
+            local tool = c:FindFirstChildWhichIsA("Tool")
+            if tool then
+                local cfg = GC:FindFirstChild(tool.Name)
+                local cfgTable = nil
+                -- prefer getgc/resolved table
+                local ok, mod = pcall(GetGun)
+                if ok and type(mod) == "table" then cfgTable = mod end
+
+                -- attempt to find a fire part
+                local firePart = tool:FindFirstChild("FirePart") or tool:FindFirstChild("Handle") or tool.PrimaryPart
+                if cfgTable and firePart then
+                    rp.FilterDescendantsInstances = {Player.Character}
+                    local target, dist = nil, math.huge
+
+                    for _, plr in ipairs(Players:GetPlayers()) do
+                        if plr ~= Player and plr.Team ~= Player.Team and plr.Character then
+                            local h = plr.Character:FindFirstChildOfClass("Humanoid")
+                            if h and h.Health > 0 then
+                                local head = plr.Character:FindFirstChild("Head") or plr.Character:FindFirstChild("HumanoidRootPart")
+                                if head then
+                                    local d = (head.Position - firePart.Position).Magnitude
+                                    if d < dist then
+                                        dist = d
+                                        target = head
+                                    end
+                                end
+                            end
+                        end
+                    end
+
+                    if target then
+                        local direction = target.Position - firePart.Position
+                        local result = workspace:Raycast(firePart.Position, direction.Unit * direction.Magnitude, rp)
+                        local hitPos = (result and result.Position) or target.Position
+                        local info = {
+                            [target] = {
+                                Normal   = (result and result.Normal) or Vector3.new(0,1,0),
+                                Position = hitPos,
+                                Instance = target,
+                                Distance = direction.Magnitude,
+                                Material = (result and result.Material) or Enum.Material.ForceField
+                            }
+                        }
+                        pcall(function() FireEvent:FireServer(tool, info, hitPos) end)
+                        reg(target.Parent)
+                    end
+                end
+            end
+        end
+        task.wait()
+    end
+end))
+
+-- =========================
+-- 4) UI: Mods tab (controls & apply rawset)
+-- =========================
+local TabA = ElementsSection:Tab({ Title = "Mods", Icon = "solar:Home2Bold", IconColor = Grey, IconShape = "Square" })
+local SectionA = TabA:Section({ Title = "A - Controls" })
+
+local bulletsValue, spreadValue, rangeValue, speedValue = nil, nil, nil, nil
+
+SectionA:Paragraph({ Title = "Kill Aura", Desc = "Enquanto estiver com a arma, mata os inimigos ao redor. Não afeta safezones." })
+SectionA:Toggle({ Title = "Kill-aura", Callback = function(state)
+    if state then
+        if not HasGun() then Blocker = true; Notify("Erro","Você precisa de uma arma."); return end
+        Aura = true; Blocker = false; Notify("Script","[KILL-AURA] Ativado")
+    else
+        Aura = false; Notify("Script","[KILL-AURA] Desativado")
+    end
+end })
+SectionA:Space()
+
+SectionA:Paragraph({ Title = "Noclip", Desc = "Permite atravessar paredes." })
+SectionA:Toggle({ Title = "Noclip", Callback = function(state)
+    if state then
+        CanCollide = false
+        if NoClipConn then pcall(function() NoClipConn:Disconnect() end) end
+        NoClipConn = RunService.Stepped:Connect(NoClip)
+        Notify("Noclip","[NOCLIP] Ativado")
+    else
+        CanCollide = true
+        if NoClipConn then pcall(function() NoClipConn:Disconnect() end); NoClipConn = nil end
+        Notify("Noclip","[NOCLIP] Desativado")
+    end
+end })
+SectionA:Space()
+
+-- Inputs
+SectionA:Input({ Title = "Bullets", Placeholder = "Valor", Callback = function(v) local n = tonumber(v); bulletsValue = n; if n then Notify("Bullets","Valor: "..tostring(n)) else Notify("Bullets","Inválido") end end })
+SectionA:Space()
+SectionA:Input({ Title = "Spread", Placeholder = "Valor", Callback = function(v) local n = tonumber(v); spreadValue = n; if n then Notify("Spread","Valor: "..tostring(n)) else Notify("Spread","Inválido") end end })
+SectionA:Space()
+SectionA:Input({ Title = "Range", Placeholder = "Valor", Callback = function(v) local n = tonumber(v); rangeValue = n; if n then Notify("Range","Valor: "..tostring(n)) else Notify("Range","Inválido") end end })
+SectionA:Space()
+
+-- Apply button uses rawset via ModifyGun
+SectionA:Paragraph({ Title = "Aplicar mods", Desc = "Aplica as modificações na arma equipada (usa rawset)." })
+SectionA:Button({ Title = "Aplicar mods", Callback = function()
+    if not HasGun() then Notify("Erro","Equipe uma arma para modificar."); return end
+    if bulletsValue then ModifyGun("Bullets", bulletsValue) end
+    if spreadValue then ModifyGun("Spread", spreadValue) end
+    if rangeValue then ModifyGun("Range", rangeValue) end
+    Notify("Mods","Aplicações feitas.")
+end })
+SectionA:Space()
+
+-- Speed controls
+SectionA:Input({ Title = "Speed", Placeholder = "Valor", Callback = function(v) local n = tonumber(v); speedValue = n; if n then Notify("Speed","Valor: "..tostring(n)) else Notify("Speed","Inválido") end end })
+SectionA:Space()
+SectionA:Button({ Title = "Aplicar velocidade", Callback = function()
+    if not speedValue then Notify("Speed","Informe um valor válido."); return end
+    local h = Player.Character and Player.Character:FindFirstChild("Humanoid")
+    if h then h.WalkSpeed = speedValue; Notify("Speed","Alterada para "..tostring(speedValue)) else Notify("Speed","Personagem não encontrado.") end
+end })
+SectionA:Space()
+SectionA:Button({ Title = "Resetar speed", Callback = function() local h = Player.Character and Player.Character:FindFirstChild("Humanoid") if h then h.WalkSpeed = WalkSpeedDefault or 16; Notify("Speed","Restaurada") end end })
+SectionA:Space()
+
+-- =========================
+-- 5) Hitbox & ESP
+-- =========================
+local TabB = ElementsSection:Tab({ Title = "Hitbox", Icon = "solar:CheckSquareBold", IconColor = Green, IconShape = "Square" })
+local SectionB = TabB:Section({ Title = "Hitbox e ESP" })
+
+local Players_local = Players
+local LocalPlayer = Players_local.LocalPlayer
+local HitboxEnabled = false
+local HitboxSize = Vector3.new(5,5,5)
+local HitboxTransparency = 0.5
+local ESPEnabled = false
+local ESPTable = {}
+
+local function ResetHitbox(plr)
+    if plr == LocalPlayer then return end
+    local char = plr.Character
+    if not char then return end
+    local HRP = char:FindFirstChild("HumanoidRootPart")
+    if not HRP then return end
+    HRP.Size = Vector3.new(2,2,1)
+    HRP.Transparency = 0
+    HRP.CanCollide = true
+    HRP.Massless = false
+    local hl = HRP:FindFirstChild("Highlight_HB")
+    if hl then hl:Destroy() end
+end
+
+local function ApplyHitbox(plr)
+    if not HitboxEnabled then return end
+    if plr == LocalPlayer then return end
+    if plr.Team == LocalPlayer.Team then return end
+    if not plr.Character then return end
+    local HRP = plr.Character:FindFirstChild("HumanoidRootPart")
+    if not HRP then return end
+    HRP.Size = HitboxSize
+    HRP.Transparency = HitboxTransparency
+    HRP.CanCollide = false
+    HRP.Massless = false
+    local old = HRP:FindFirstChild("Highlight_HB")
+    if old then old:Destroy() end
+    local hl = Instance.new("Highlight")
+    hl.Name = "Highlight_HB"
+    hl.Parent = HRP
+    hl.FillColor = plr.TeamColor.Color
+    hl.OutlineColor = plr.TeamColor.Color
+    hl.FillTransparency = 1 - HitboxTransparency
+    hl.OutlineTransparency = HitboxTransparency
+end
+
+local function ClearESP(plr)
+    if ESPTable[plr] then
+        for _, d in pairs(ESPTable[plr]) do
+            if d and d.Remove then pcall(d.Remove, d) end
+        end
+        ESPTable[plr] = nil
+    end
+end
+
+local function ApplyESP(plr)
+    if not ESPEnabled then return end
+    if plr == LocalPlayer then return end
+    if plr.Team == LocalPlayer.Team then return end
+    if not plr.Character then return end
+
+    ClearESP(plr)
+    local HRP = plr.Character:FindFirstChild("HumanoidRootPart")
+    local Hum = plr.Character:FindFirstChildWhichIsA("Humanoid")
+    if not HRP or not Hum then return end
+
+    local nameDraw = Drawing.new("Text"); nameDraw.Size = 17; nameDraw.Center = true; nameDraw.Outline = true; nameDraw.Color = Color3.new(1,1,1)
+    local hpDraw   = Drawing.new("Text"); hpDraw.Size = 16; hpDraw.Center = true; hpDraw.Outline = true; hpDraw.Color = Color3.fromRGB(0,255,0)
+    local toolDraw = Drawing.new("Text"); toolDraw.Size = 16; toolDraw.Center = true; toolDraw.Outline = true; toolDraw.Color = Color3.fromRGB(200,200,255)
+
+    ESPTable[plr] = {nameDraw, hpDraw, toolDraw}
+
+    task.spawn(function()
+        while ESPEnabled and plr.Character == HRP.Parent do
+            local pos, visible = workspace.CurrentCamera:WorldToViewportPoint(HRP.Position + Vector3.new(0,3,0))
+            if visible then
+                nameDraw.Text = plr.Name; nameDraw.Position = Vector2.new(pos.X, pos.Y - 20); nameDraw.Visible = true
+                hpDraw.Text   = tostring(math.floor(Hum.Health)); hpDraw.Position = Vector2.new(pos.X, pos.Y); hpDraw.Visible = true
+                local tool
+                for _, v in ipairs(HRP.Parent:GetChildren()) do if v:IsA("Tool") then tool = v.Name break end end
+                if tool then toolDraw.Text = tool; toolDraw.Position = Vector2.new(pos.X, pos.Y + 20); toolDraw.Visible = true else toolDraw.Visible = false end
+            else
+                nameDraw.Visible = false; hpDraw.Visible = false; toolDraw.Visible = false
+            end
+            task.wait()
+        end
+        ClearESP(plr)
+    end)
+end
+
+local function RefreshAll()
+    for _,plr in ipairs(Players_local:GetPlayers()) do
+        if HitboxEnabled then ApplyHitbox(plr) else ResetHitbox(plr) end
+        ClearESP(plr)
+        if ESPEnabled then ApplyESP(plr) end
+    end
+end
+
+Players_local.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function() task.wait(1); if HitboxEnabled then ApplyHitbox(plr) end; if ESPEnabled then ApplyESP(plr) end end)
+end)
+
+SectionB:Paragraph({ Title = "Modificar hitbox", Desc = "Altera a hitbox dos inimigos." })
+SectionB:Toggle({ Title = "Hitbox", Callback = function(v) HitboxEnabled = v; RefreshAll() end })
+SectionB:Space()
+SectionB:Paragraph({ Title = "ESP", Desc = "Permite ver players pela parede." })
+SectionB:Toggle({ Title = "ESP", Callback = function(v) ESPEnabled = v; RefreshAll() end })
+SectionB:Space()
+SectionB:Paragraph({ Title = "Tamanho da hitbox", Desc = "Valor para alterar hitbox." })
+SectionB:Input({ Title = "Tamanho da hitbox", Placeholder = "Ex: 10", Callback = function(v) local n = tonumber(v); if not n then return end; HitboxSize = Vector3.new(n,n,n); RefreshAll() end })
+SectionB:Space()
+SectionB:Paragraph({ Title = "Transparência", Desc = "0 = visível; 1 = invisível." })
+SectionB:Slider({ Title = "Transparência", Step = 0.02, Value = { Min = 0, Max = 1, Default = 0.5 }, Callback = function(val) HitboxTransparency = val; RefreshAll() end })
+SectionB:Space()
+
+-- =========================
+-- 6) Other integrations (Discord / Nebula icons)
+-- =========================
+do
+    local InviteCode = "4gcMZxKPcQ"
+    local DiscordAPI = "https://discord.com/api/v10/invites/" .. InviteCode .. "?with_counts=true&with_expiration=true"
+    pcall(function()
+        local Response = WindUI.cloneref(game:GetService("HttpService")):JSONDecode(WindUI.Creator.Request({ Url = DiscordAPI, Method = "GET", Headers = { ["User-Agent"] = "WindUI/Example", ["Accept"] = "application/json" } }).Body)
+        local DiscordTab = Outros:Tab({ Title = "Discord" })
+        if Response and Response.guild then
+            DiscordTab:Section({ Title = "Entre no nosso Discord!", TextSize = 20 })
+            DiscordTab:Paragraph({
+                Title = tostring(Response.guild.name),
+                Desc = tostring(Response.guild.description),
+                Image = "https://cdn.discordapp.com/icons/" .. Response.guild.id .. "/" .. Response.guild.icon .. ".png?size=1024",
+                Thumbnail = "https://cdn.discordapp.com/banners/1300692552005189632/35981388401406a4b7dffd6f447a64c4.png?size=512",
+                ImageSize = 48,
+                Buttons = {{ Title = "Copiar link!", Icon = "link", Callback = function() setclipboard("https://discord.gg/"..InviteCode) end }}
+            })
+        end
+    end)
+end
+
+do
+    pcall(function()
+        local NebulaIcons = loadstring(game:HttpGetAsync("https://raw.nebulasoftworks.xyz/nebula-icon-library-loader"))()
+        WindUI.Creator.AddIcons("fluency", NebulaIcons.Fluency)
+        WindUI.Creator.AddIcons("nebula", NebulaIcons.nebulaIcons)
+        Window:Section({ Title = "Feito com carinho", Icon = "nebula:nebula" })
+    end)
+end
+
+-- End of script
