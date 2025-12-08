@@ -1,0 +1,1333 @@
+local n = getrawmetatable(game)
+setreadonly(n, false)
+local o = n.__index
+
+n.__index = newcclosure(function(p, q)
+    if q == "Size" then
+        local r, s = pcall(function() return p.ClassName end)
+        if r and s == "Part" and p.Name == "HumanoidRootPart" then
+            return Vector3.new(2, 2, 1)
+        end
+    end
+    return o(p, q)
+end)
+
+setreadonly(n, true)
+
+--variables
+
+local Players        = game:GetService("Players")
+local UIS            = game:GetService("UserInputService")
+local StarterGui     = game:GetService("StarterGui")
+local RunService     = game:GetService("RunService")
+local Replicated     = game:GetService("ReplicatedStorage")
+local TweenService   = game:GetService("TweenService")
+
+local Player = Players.LocalPlayer
+
+local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local LocalizationService = game:GetService("LocalizationService")
+
+local player = Players.LocalPlayer
+
+local WindUI
+
+do
+    local ok, result = pcall(function()
+        return require("./src/Init")
+    end)
+
+    if ok then
+        WindUI = result
+    else
+        WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+    end
+end
+
+WindUI.Creator.AddIcons("solar", {
+    ["CheckSquareBold"] = "rbxassetid://132438947521974",
+    ["CursorSquareBold"] = "rbxassetid://120306472146156",
+    ["FileTextBold"] = "rbxassetid://89294979831077",
+    ["FolderWithFilesBold"] = "rbxassetid://74631950400584",
+    ["HamburgerMenuBold"] = "rbxassetid://134384554225463",
+    ["Home2Bold"] = "rbxassetid://92190299966310",
+    ["InfoSquareBold"] = "rbxassetid://119096461016615",
+    ["PasswordMinimalisticInputBold"] = "rbxassetid://109919668957167",
+    ["SolarSquareTransferHorizontalBold"] = "rbxassetid://125444491429160",
+})
+
+local Window = WindUI:CreateWindow({
+    Title = ".ftgs hub  |  WindUI Example",
+    Folder = "ftgshub",
+    IconSize = 22*2,
+    NewElements = true,
+    HideSearchBar = false,
+    OpenButton = {
+        Title = "Open .ftgs hub UI",
+        CornerRadius = UDim.new(1,0),
+        StrokeThickness = 3,
+        Enabled = true,
+        Draggable = true,
+        OnlyMobile = false,
+        Color = ColorSequence.new(
+            Color3.fromHex("#30FF6A"),
+            Color3.fromHex("#e7ff2f")
+        )
+    },
+    Topbar = {
+        Height = 44,
+        ButtonsType = "Mac",
+    },
+})
+
+Window:Tag({
+    Title = "v" .. WindUI.Version,
+    Icon = "github",
+    Color = Color3.fromHex("#1c1c1c")
+})
+
+local Purple = Color3.fromHex("#7775F2")
+local Yellow = Color3.fromHex("#ECA201")
+local Green = Color3.fromHex("#10C550")
+local Grey = Color3.fromHex("#83889E")
+local Blue = Color3.fromHex("#257AF7")
+local Red = Color3.fromHex("#EF4F1D")
+
+local function parseJSON(luau_table, indent, level, visited)
+    indent = indent or 2
+    level = level or 0
+    visited = visited or {}
+
+    local currentIndent = string.rep(" ", level * indent)
+    local nextIndent = string.rep(" ", (level + 1) * indent)
+
+    if luau_table == nil then
+        return "null"
+    end
+
+    local dataType = type(luau_table)
+
+    if dataType == "table" then
+        if visited[luau_table] then
+            return "\"[Circular Reference]\""
+        end
+
+        visited[luau_table] = true
+
+        local isArray = true
+        local maxIndex = 0
+
+        for k, _ in pairs(luau_table) do
+            if type(k) == "number" and k > maxIndex then
+                maxIndex = k
+            end
+            if type(k) ~= "number" or k <= 0 or math.floor(k) ~= k then
+                isArray = false
+                break
+            end
+        end
+
+        local count = 0
+        for _ in pairs(luau_table) do
+            count = count + 1
+        end
+        if count ~= maxIndex and isArray then
+            isArray = false
+        end
+
+        if count == 0 then
+            return "{}"
+        end
+
+        if isArray then
+            if count == 0 then
+                return "[]"
+            end
+
+            local result = "[\n"
+
+            for i = 1, maxIndex do
+                result = result .. nextIndent .. parseJSON(luau_table[i], indent, level + 1, visited)
+                if i < maxIndex then
+                    result = result .. ","
+                end
+                result = result .. "\n"
+            end
+
+            result = result .. currentIndent .. "]"
+            return result
+        else
+            local result = "{\n"
+            local first = true
+
+            local keys = {}
+            for k in pairs(luau_table) do
+                table.insert(keys, k)
+            end
+            table.sort(keys, function(a, b)
+                if type(a) == type(b) then
+                    return tostring(a) < tostring(b)
+                else
+                    return type(a) < type(b)
+                end
+            end)
+
+            for _, k in ipairs(keys) do
+                local v = luau_table[k]
+                if not first then
+                    result = result .. ",\n"
+                else
+                    first = false
+                end
+
+                if type(k) == "string" then
+                    result = result .. nextIndent .. "\"" .. k .. "\": "
+                else
+                    result = result .. nextIndent .. "\"" .. tostring(k) .. "\": "
+                end
+
+                result = result .. parseJSON(v, indent, level + 1, visited)
+            end
+
+            result = result .. "\n" .. currentIndent .. "}"
+            return result
+        end
+    elseif dataType == "string" then
+        local escaped = luau_table:gsub("\\", "\\\\")
+        escaped = escaped:gsub("\"", "\\\"")
+        escaped = escaped:gsub("\n", "\\n")
+        escaped = escaped:gsub("\r", "\\r")
+        escaped = escaped:gsub("\t", "\\t")
+
+        return "\"" .. escaped .. "\""
+    elseif dataType == "number" then
+        return tostring(luau_table)
+    elseif dataType == "boolean" then
+        return luau_table and "true" or "false"
+    elseif dataType == "function" then
+        return "\"function\""
+    else
+        return "\"" .. dataType .. "\""
+    end
+end
+
+local function tableToClipboard(luau_table, indent)
+    indent = indent or 4
+    local jsonString = parseJSON(luau_table, indent)
+    pcall(function() setclipboard(jsonString) end)
+    return jsonString
+end
+
+do
+    local AboutTab = Window:Tab({
+        Title = "About WindUI",
+        Desc = "Description Example", 
+        Icon = "solar:InfoSquareBold",
+        IconColor = Grey,
+        IconShape = "Square",
+    })
+
+    local AboutSection = AboutTab:Section({
+        Title = "About WindUI",
+    })
+
+    AboutSection:Image({
+        Image = "https://repository-images.githubusercontent.com/880118829/22c020eb-d1b1-4b34-ac4d-e33fd88db38d",
+        AspectRatio = "16:9",
+        Radius = 9,
+    })
+
+    AboutSection:Space({ Columns = 3 })
+
+    AboutSection:Section({
+        Title = "What is WindUI?",
+        TextSize = 24,
+        FontWeight = Enum.FontWeight.SemiBold,
+    })
+
+    AboutSection:Space()
+
+    AboutSection:Section({
+        Title = [[WindUI is a stylish, open-source UI (User Interface) library specifically designed for Roblox Script Hubs.
+Developed by Footagesus (.ftgs, Footages).
+It aims to provide developers with a modern, customizable, and easy-to-use toolkit for creating visually appealing interfaces within Roblox.
+The project is primarily written in Lua (Luau), the scripting language used in Roblox.]],
+        TextSize = 18,
+        TextTransparency = .35,
+        FontWeight = Enum.FontWeight.Medium,
+    })
+
+    AboutTab:Space({ Columns = 4 }) 
+
+    AboutTab:Button({
+        Title = "Export WindUI JSON (copy)",
+        Color = Color3.fromHex("#a2ff30"),
+        Justify = "Center",
+        IconAlign = "Left",
+        Icon = "",
+        Callback = function()
+            tableToClipboard(WindUI)
+            WindUI:Notify({
+                Title = "WindUI JSON",
+                Content = "Copied to Clipboard!"
+            })
+        end
+    })
+
+    AboutTab:Space({ Columns = 1 }) 
+
+    AboutTab:Button({
+        Title = "Destroy Window",
+        Color = Color3.fromHex("#ff4830"),
+        Justify = "Center",
+        Icon = "shredder",
+        IconAlign = "Left",
+        Callback = function()
+            Window:Destroy()
+        end
+    })
+end
+
+local ElementsSection = Window:Section({
+    Title = "Elements",
+})
+local ConfigUsageSection = Window:Section({
+    Title = "Config Usage",
+})
+local OtherSection = Window:Section({
+    Title = "Other",
+})
+
+do
+
+    local TabC = ElementsSection:Tab({
+        Title = "C",
+        Icon = "solar:CursorSquareBold",
+        IconColor = Blue,
+        IconShape = "Square",
+    })
+
+    local SectionC = TabC:Section({
+        Title = "C - Controls"
+    })
+
+    SectionC:Toggle({
+        Title = "Ativar autofarm",
+        Callback = function(v) print("C Toggle 1:", v) end
+    })
+    SectionC:Space()
+
+    SectionC:Toggle({
+        Title = "Modo seguro",
+        Callback = function(v) print("C Toggle 2:", v) end
+    })
+    SectionC:Space()
+
+    SectionC:Input({
+        Title = "Raio de seguranÃ§a",
+        Placeholder = "Enter C input",
+        Callback = function(v) print("C Input:", v) end
+    })
+end
+
+do
+    local ConfigTab = ConfigUsageSection:Tab({
+        Title = "Config Usage",
+        Icon = "solar:FolderWithFilesBold",
+        IconColor = Purple,
+        IconShape = nil,
+    })
+
+    local ConfigManager = Window.ConfigManager
+    local ConfigName = "default"
+
+    local ConfigNameInput = ConfigTab:Input({
+        Title = "Config Name",
+        Icon = "file-cog",
+        Callback = function(value)
+            ConfigName = value
+        end
+    })
+
+    ConfigTab:Space()
+
+    local AllConfigs = ConfigManager:AllConfigs()
+    local DefaultValue = table.find(AllConfigs, ConfigName) and ConfigName or nil
+
+    local AllConfigsDropdown = ConfigTab:Dropdown({
+        Title = "All Configs",
+        Desc = "Select existing configs",
+        Values = AllConfigs,
+        Value = DefaultValue,
+        Callback = function(value)
+            ConfigName = value
+            ConfigNameInput:Set(value)
+        end
+    })
+
+    ConfigTab:Space()
+
+    ConfigTab:Button({
+        Title = "Save Config",
+        Icon = "",
+        Justify = "Center",
+        Callback = function()
+            Window.CurrentConfig = ConfigManager:Config(ConfigName)
+            if Window.CurrentConfig:Save() then
+                WindUI:Notify({
+                    Title = "Config Saved",
+                    Desc = "Config '" .. ConfigName .. "' saved",
+                    Icon = "check",
+                })
+            end
+
+            AllConfigsDropdown:Refresh(ConfigManager:AllConfigs())
+        end
+    })
+
+    ConfigTab:Space()
+
+    ConfigTab:Button({
+        Title = "Load Config",
+        Icon = "",
+        Justify = "Center",
+        Callback = function()
+            Window.CurrentConfig = ConfigManager:CreateConfig(ConfigName)
+            if Window.CurrentConfig:Load() then
+                WindUI:Notify({
+                    Title = "Config Loaded",
+                    Desc = "Config '" .. ConfigName .. "' loaded",
+                    Icon = "refresh-cw",
+                })
+            end
+        end
+    })
+
+    ConfigTab:Space()
+
+    ConfigTab:Button({
+        Title = "Print AutoLoad Configs",
+        Icon = "",
+        Justify = "Center",
+        Callback = function()
+            pcall(function()
+                print(game:GetService("HttpService"):JSONDecode(ConfigManager:GetAutoLoadConfigs()))
+            end)
+        end
+    })
+end
+
+do
+    local InviteCode = "ftgs-development-hub-1300692552005189632"
+    local DiscordAPI = "https://discord.com/api/v10/invites/" .. InviteCode .. "?with_counts=true&with_expiration=true"
+
+    local ok, resp = pcall(function()
+        return WindUI.Creator.Request({
+            Url = DiscordAPI,
+            Method = "GET",
+            Headers = {
+                ["User-Agent"] = "WindUI/Example",
+                ["Accept"] = "application/json"
+            }
+        })
+    end)
+
+    local DiscordTab = OtherSection:Tab({
+        Title = "Discord",
+    })
+
+    if ok and resp and resp.Body then
+        local success, Response = pcall(function()
+            return WindUI.cloneref(game:GetService("HttpService")):JSONDecode(resp.Body)
+        end)
+
+        if success and Response and Response.guild then
+            DiscordTab:Section({
+                Title = "Join our Discord server!",
+                TextSize = 20,
+            })
+            DiscordTab:Paragraph({
+                Title = tostring(Response.guild.name),
+                Desc = tostring(Response.guild.description),
+                Image = "https://cdn.discordapp.com/icons/" .. Response.guild.id .. "/" .. Response.guild.icon .. ".png?size=1024",
+                Thumbnail = "https://cdn.discordapp.com/banners/1300692552005189632/35981388401406a4b7dffd6f447a64c4.png?size=512",
+                ImageSize = 48,
+                Buttons = {
+                    {
+                        Title = "Copy link",
+                        Icon = "link",
+                        Callback = function()
+                            pcall(function() setclipboard("https://discord.gg/" .. InviteCode) end)
+                        end
+                    }
+                }
+            })
+        end
+    end
+end
+
+do
+    local ok, NebulaIcons = pcall(function()
+        return loadstring(game:HttpGetAsync("https://raw.nebulasoftworks.xyz/nebula-icon-library-loader"))()
+    end)
+
+    if ok and NebulaIcons then
+        WindUI.Creator.AddIcons("fluency", NebulaIcons.Fluency)
+        WindUI.Creator.AddIcons("nebula", NebulaIcons.nebulaIcons)
+
+        local TestSection = Window:Section({
+            Title = "Custom icons usage test (nebula)",
+            Icon = "nebula:nebula",
+        })
+    end
+end
+
+
+local function Notify(title, msg, dur)
+    pcall(function()
+        WindUI:Notify({
+            Title = title,
+            Desc = msg
+        })
+end)
+
+
+pcall(function() Notify("oi ^^", "feito por fp3 no Discord", 5) end)
+pcall(function() Notify("Ajuda", "WindUI integrado. Use a aba A.", 7) end)
+
+local GS = Replicated:WaitForChild("GunSystem")
+local GC = GS:WaitForChild("GunsConfigurations")
+local FireEvent = GS.Remotes.Events.Fire
+local ReloadFunction = GS.Remotes.Functions.Reload
+
+local Active = true
+local Aura = false
+local Blocker = false
+local Connections = {}
+local Tasks = {}
+local LastTargetTime = 0
+local WalkSpeedDefault = 16
+local NoClipConn = nil
+local CanCollide = true
+
+local function track(c) table.insert(Connections, c) end
+local function trackTask(t) table.insert(Tasks, t) end
+local function reg(target) LastTargetTime = tick() end
+
+local function HasGun()
+    local bp = Player:FindFirstChild("Backpack")
+    local char = Player.Character
+
+    for _, cfg in ipairs(GC:GetChildren()) do
+        local n = cfg.Name
+        if (bp and bp:FindFirstChild(n)) or (char and char:FindFirstChild(n)) then
+            return true
+        end
+    end
+    return false
+end
+
+local function bypass(h)
+    local ok, mt = pcall(getrawmetatable, h)
+    if not ok or not mt then return end
+
+    setreadonly(mt, false)
+
+    local old = mt.__index
+    mt.__index = newcclosure(function(s, k)
+        if s == h then
+            if k == "WalkSpeed" then return 16 end
+            if k == "JumpPower" then return 50 end
+        end
+        return old(s, k)
+    end)
+
+    setreadonly(mt, true)
+end
+
+if Player.Character then
+    local hum = Player.Character:FindFirstChildOfClass("Humanoid")
+    if hum then bypass(hum) end
+end
+Player.CharacterAdded:Connect(function(c)
+    local h = c:WaitForChild("Humanoid")
+    bypass(h)
+end)
+
+local function NoClip()
+    if not CanCollide and Player.Character then
+        for _, v in pairs(Player.Character:GetDescendants()) do
+            if v:IsA("BasePart") and v.CanCollide then
+                v.CanCollide = false
+            end
+        end
+    end
+end
+
+local function KillScript()
+    if not Active then return end
+    Active = false
+    Aura = false
+    CanCollide = true
+
+    if NoClipConn then NoClipConn:Disconnect() end
+
+    for _, c in ipairs(Connections) do
+        if c.Disconnect then c:Disconnect() end
+    end
+    for _, t in ipairs(Tasks) do
+        pcall(task.cancel, t)
+    end
+
+    Notify("Script", "Script encerrado.")
+end
+
+local function GetGun()
+    local c = Player.Character
+    if not c then return end
+
+    local tool = c:FindFirstChildWhichIsA("Tool")
+    if not tool then return end
+
+    local cfg = GC:FindFirstChild(tool.Name)
+    if not cfg then return end
+
+    return require(cfg), tool.Name
+end
+
+local function ModifyGun(prop, val)
+    local cfg, name = GetGun()
+    if cfg and cfg[prop] ~= nil then
+        cfg[prop] = val
+        Notify("GunMod", name.." "..prop.." â†’ "..tostring(val))
+    end
+end
+
+trackTask(task.spawn(function()
+    while task.wait(0.25) do
+        if not Active or not Aura or not HasGun() then continue end
+        local c = Player.Character
+        if not c then continue end
+
+        local tool = c:FindFirstChildWhichIsA("Tool")
+        if not tool then continue end
+
+        pcall(function()
+            ReloadFunction:InvokeServer(tool)
+        end)
+    end
+end))
+
+trackTask(task.spawn(function()
+    local rp = RaycastParams.new()
+    rp.FilterType = Enum.RaycastFilterType.Exclude
+
+    while Active do
+        if Aura and HasGun() and Player.Character then
+            local c = Player.Character
+            local tool = c:FindFirstChildWhichIsA("Tool")
+
+            if tool then
+                local cfg = GC:FindFirstChild(tool.Name)
+                if cfg then
+                    local cfgData = require(cfg)
+                    local firePart = tool:FindFirstChild("FirePart") or tool:FindFirstChild("Handle") or tool.PrimaryPart
+                    if firePart then
+
+                        rp.FilterDescendantsInstances = {Player.Character}
+
+                        local target, dist = nil, math.huge
+
+                        for _, plr in ipairs(Players:GetPlayers()) do
+                            if plr ~= Player and plr.Team ~= Player.Team and plr.Character then
+                                local h = plr.Character:FindFirstChildOfClass("Humanoid")
+                                if h and h.Health > 0 then
+                                    local head = plr.Character:FindFirstChild("Head") or plr.Character:FindFirstChild("HumanoidRootPart")
+                                    if head then
+                                        local d = (head.Position - firePart.Position).Magnitude
+                                        if d < dist then
+                                            dist = d
+                                            target = head
+                                        end
+                                    end
+                                end
+                            end
+                        end
+
+                        if target then
+                            local direction = target.Position - firePart.Position
+                            local result = workspace:Raycast(firePart.Position, direction.Unit * direction.Magnitude, rp)
+
+                            local hitPos = (result and result.Position) or target.Position
+                            local info = {
+                                [target] = {
+                                    Normal   = (result and result.Normal) or Vector3.new(0,1,0),
+                                    Position = hitPos,
+                                    Instance = target,
+                                    Distance = direction.Magnitude,
+                                    Material = (result and result.Material) or Enum.Material.ForceField
+                                }
+                            }
+
+                            pcall(function()
+                                FireEvent:FireServer(tool, info, hitPos)
+                            end)
+
+                            reg(target.Parent)
+                        end
+                    end
+                end
+            end
+        end
+
+        task.wait()
+    end
+end))
+
+do
+    local TabA = ElementsSection:Tab({
+        Title = "A",
+        Icon = "solar:Home2Bold",
+        IconColor = Grey,
+        IconShape = "Square",
+    })
+
+    local SectionA = TabA:Section({
+        Title = "A - Controls"
+    })
+
+    local bulletsValue = nil
+    local spreadValue  = nil
+    local rangeValue   = nil
+    local speedValue   = nil
+
+    SectionA:Toggle({
+        Title = "Kill-aura",
+        Callback = function(state)
+            if state then
+                if not HasGun() then
+                    Blocker = true
+                    WindUI:Notify({
+                        Title = "Erro",
+                        Desc = "VocÃª precisa de uma arma."
+                    })
+                    return
+                end
+                Aura = true
+                Blocker = false
+                WindUI:Notify({ Title = "Script", Desc = "[KILL-AURA] Ativado" })
+            else
+                Aura = false
+                WindUI:Notify({ Title = "Script", Desc = "[KILL-AURA] Desativado" })
+            end
+        end
+    })
+    SectionA:Space()
+
+    SectionA:Toggle({
+        Title = "Noclip",
+        Callback = function(state)
+            if state then
+                CanCollide = false
+                if NoClipConn then
+                    pcall(function() NoClipConn:Disconnect() end)
+                end
+                NoClipConn = RunService.Stepped:Connect(NoClip)
+                WindUI:Notify({ Title = "Noclip", Desc = "Noclip ON" })
+            else
+                CanCollide = true
+                if NoClipConn then
+                    pcall(function() NoClipConn:Disconnect() end)
+                    NoClipConn = nil
+                end
+                WindUI:Notify({ Title = "Noclip", Desc = "Noclip OFF" })
+            end
+        end
+    })
+    SectionA:Space()
+
+    SectionA:Input({
+        Title = "Bullets",
+        Placeholder = "Enter value 1",
+        Callback = function(v)
+            local n = tonumber(v)
+            bulletsValue = n
+            if n then
+                WindUI:Notify({ Title = "Bullets", Desc = "Valor salvo: "..tostring(n) })
+            else
+                WindUI:Notify({ Title = "Bullets", Desc = "Valor invÃ¡lido" })
+            end
+        end
+    })
+    SectionA:Space()
+
+    SectionA:Input({
+        Title = "Spread",
+        Placeholder = "Enter value 2",
+        Callback = function(v)
+            local n = tonumber(v)
+            spreadValue = n
+            if n then
+                WindUI:Notify({ Title = "Spread", Desc = "Valor salvo: "..tostring(n) })
+            else
+                WindUI:Notify({ Title = "Spread", Desc = "Valor invÃ¡lido" })
+            end
+        end
+    })
+    SectionA:Space()
+
+    SectionA:Input({
+        Title = "Range",
+        Placeholder = "Enter value 3",
+        Callback = function(v)
+            local n = tonumber(v)
+            rangeValue = n
+            if n then
+                WindUI:Notify({ Title = "Range", Desc = "Valor salvo: "..tostring(n) })
+            else
+                WindUI:Notify({ Title = "Range", Desc = "Valor invÃ¡lido" })
+            end
+        end
+    })
+    SectionA:Space()
+
+    SectionA:Button({
+        Title = "Modificar",
+        Callback = function()
+            if not HasGun() then
+                WindUI:Notify({ Title = "Erro", Desc = "VocÃª precisa de uma arma para modificar." })
+                return
+            end
+
+            if bulletsValue then
+                ModifyGun("Bullets", bulletsValue)
+            end
+            if spreadValue then
+                ModifyGun("Spread", spreadValue)
+            end
+            if rangeValue then
+                ModifyGun("Range", rangeValue)
+            end
+
+            WindUI:Notify({ Title = "GunMod", Desc = "ModificaÃ§Ãµes aplicadas." })
+        end
+    })
+    SectionA:Space()
+
+    SectionA:Input({
+        Title = "Speed",
+        Placeholder = "Enter value 4",
+        Callback = function(v)
+            local n = tonumber(v)
+            speedValue = n
+            if n then
+                WindUI:Notify({ Title = "Speed", Desc = "Valor salvo: "..tostring(n) })
+            else
+                WindUI:Notify({ Title = "Speed", Desc = "Valor invÃ¡lido" })
+            end
+        end
+    })
+    SectionA:Space()
+
+    SectionA:Button({
+        Title = "Aplicar",
+        Callback = function()
+            if not speedValue then
+                WindUI:Notify({ Title = "Speed", Desc = "Informe um valor vÃ¡lido." })
+                return
+            end
+
+            local h = Player.Character and Player.Character:FindFirstChild("Humanoid")
+            if h then
+                h.WalkSpeed = speedValue
+                WindUI:Notify({ Title = "Speed", Desc = "Alterada para "..tostring(speedValue) })
+            else
+                WindUI:Notify({ Title = "Speed", Desc = "Humanoid nÃ£o encontrado." })
+            end
+        end
+    })
+    SectionA:Space()
+
+    SectionA:Button({
+        Title = "Resetar speed",
+        Callback = function()
+            local h = Player.Character and Player.Character:FindFirstChild("Humanoid")
+            if h then
+                h.WalkSpeed = WalkSpeedDefault or 16
+                WindUI:Notify({ Title = "Speed", Desc = "Restaurada para "..tostring(WalkSpeedDefault or 16) })
+            end
+        end
+    })
+end
+
+do
+    local TabB = ElementsSection:Tab({
+        Title = "HB Expander",
+        Icon = "solar:CheckSquareBold",
+        IconColor = Green,
+        IconShape = "Square",
+    })
+
+    local SectionB = TabB:Section({
+        Title = "HB Expander & ESP"
+    })
+
+    local Players_local = game:GetService("Players")
+    local LocalPlayer = Players_local.LocalPlayer
+
+    local HitboxEnabled = false
+    local HitboxSize = Vector3.new(5,5,5)
+    local HitboxTransparency = 0.5
+    local ESPEnabled = false
+    local ESPTable = {}
+
+    local function ResetHitbox(plr)
+        if plr == LocalPlayer then return end
+        local char = plr.Character
+        if not char then return end
+
+        local HRP = char:FindFirstChild("HumanoidRootPart")
+        if not HRP then return end
+
+        HRP.Size = Vector3.new(2,2,1)
+        HRP.Transparency = 0
+        HRP.CanCollide = true
+        HRP.Massless = false
+
+        local hl = HRP:FindFirstChild("Highlight_HB")
+        if hl then hl:Destroy() end
+    end
+
+    local function ApplyHitbox(plr)
+        if not HitboxEnabled then return end
+        if plr == LocalPlayer then return end
+        if plr.Team == LocalPlayer.Team then return end
+        if not plr.Character then return end
+
+        local HRP = plr.Character:FindFirstChild("HumanoidRootPart")
+        if not HRP then return end
+
+        HRP.Size = HitboxSize
+        HRP.Transparency = HitboxTransparency
+        HRP.CanCollide = false
+        HRP.Massless = false
+
+        local old = HRP:FindFirstChild("Highlight_HB")
+        if old then old:Destroy() end
+
+        local hl = Instance.new("Highlight")
+        hl.Name = "Highlight_HB"
+        hl.Parent = HRP
+        hl.FillColor = plr.TeamColor.Color
+        hl.OutlineColor = plr.TeamColor.Color
+        hl.FillTransparency = 1 - HitboxTransparency
+        hl.OutlineTransparency = HitboxTransparency
+    end
+
+    local function ClearESP(plr)
+        if ESPTable[plr] then
+            for _, d in pairs(ESPTable[plr]) do
+                if d and d.Remove then pcall(d.Remove, d) end
+            end
+            ESPTable[plr] = nil
+        end
+    end
+
+    local function ApplyESP(plr)
+        if not ESPEnabled then return end
+        if plr == LocalPlayer then return end
+        if plr.Team == LocalPlayer.Team then return end
+        if not plr.Character then return end
+
+        ClearESP(plr)
+
+        local HRP = plr.Character:FindFirstChild("HumanoidRootPart")
+        local Hum = plr.Character:FindFirstChildWhichIsA("Humanoid")
+        if not HRP or not Hum then return end
+
+        local nameDraw = Drawing.new("Text")
+        nameDraw.Size = 17
+        nameDraw.Center = true
+        nameDraw.Outline = true
+        nameDraw.Color = Color3.new(1,1,1)
+
+        local hpDraw = Drawing.new("Text")
+        hpDraw.Size = 16
+        hpDraw.Center = true
+        hpDraw.Outline = true
+        hpDraw.Color = Color3.fromRGB(0,255,0)
+
+        local toolDraw = Drawing.new("Text")
+        toolDraw.Size = 16
+        toolDraw.Center = true
+        toolDraw.Outline = true
+        toolDraw.Color = Color3.fromRGB(200,200,255)
+
+        ESPTable[plr] = {nameDraw, hpDraw, toolDraw}
+
+        task.spawn(function()
+            while ESPEnabled and plr.Character == HRP.Parent do
+                local pos, visible = workspace.CurrentCamera:WorldToViewportPoint(HRP.Position + Vector3.new(0,3,0))
+
+                if visible then
+                    nameDraw.Text = plr.Name
+                    nameDraw.Position = Vector2.new(pos.X, pos.Y - 20)
+                    nameDraw.Visible = true
+
+                    hpDraw.Text = tostring(math.floor(Hum.Health))
+                    hpDraw.Position = Vector2.new(pos.X, pos.Y)
+                    hpDraw.Visible = true
+
+                    local tool
+                    for _, v in ipairs(HRP.Parent:GetChildren()) do
+                        if v:IsA("Tool") then tool = v.Name break end
+                    end
+
+                    if tool then
+                        toolDraw.Text = tool
+                        toolDraw.Position = Vector2.new(pos.X, pos.Y + 20)
+                        toolDraw.Visible = true
+                    else
+                        toolDraw.Visible = false
+                    end
+                else
+                    nameDraw.Visible = false
+                    hpDraw.Visible = false
+                    toolDraw.Visible = false
+                end
+                task.wait()
+            end
+
+            ClearESP(plr)
+        end)
+    end
+
+    local function RefreshAll()
+        for _,plr in ipairs(Players_local:GetPlayers()) do
+            if HitboxEnabled then ApplyHitbox(plr) else ResetHitbox(plr) end
+            ClearESP(plr)
+            if ESPEnabled then ApplyESP(plr) end
+        end
+    end
+
+    Players_local.PlayerAdded:Connect(function(plr)
+        plr.CharacterAdded:Connect(function()
+            task.wait(1)
+            if HitboxEnabled then ApplyHitbox(plr) end
+            if ESPEnabled then ApplyESP(plr) end
+        end)
+    end)
+
+    SectionB:Toggle({
+        Title = "Ativar Hitbox",
+        Callback = function(v)
+            HitboxEnabled = v
+            RefreshAll()
+        end
+    })
+    SectionB:Space()
+
+    SectionB:Toggle({
+        Title = "Ativar ESP (Drawing API)",
+        Callback = function(v)
+            ESPEnabled = v
+            RefreshAll()
+        end
+    })
+    SectionB:Space()
+
+    SectionB:Input({
+        Title = "Tamanho da Hitbox",
+        Placeholder = "Ex: 5",
+        Callback = function(v)
+            local n = tonumber(v)
+            if not n then return end
+
+            HitboxSize = Vector3.new(n,n,n)
+            RefreshAll()
+        end
+    })
+    SectionB:Space()
+
+    SectionB:Slider({
+        Title = "TransparÃªncia",
+        Step = 0.02,
+        Value = {
+            Min = 0,
+            Max = 1,
+            Default = 0.5,
+        },
+        Callback = function(val)
+            HitboxTransparency = val
+            RefreshAll()
+        end
+    })
+end
+
+-- AUTOFARM INTEGRATION START
+-- The autofarm logic is included below (unchanged), UI removed and notifications routed to WindUI.
+-- CONFIG
+local cfg = ...
+local ModoSeguro = (cfg and cfg.ModoSeguro) or true
+local RaioDeSeguranca = (cfg and cfg.RaioDeSeguranca) or 50
+
+local Remotes = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("Remotes")
+local BuyShop = Remotes:WaitForChild("BuyShop")
+local Robbery = Remotes:WaitForChild("Robbery")
+
+local plr = Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+local bag = plr:WaitForChild("Backpack")
+
+local bank = Workspace.Map.Robbery.Bank
+local CollectPos = bank.CollectPad.Position
+local status = bank.RobberyStatus.SurfaceGui.BankStatus
+
+local A = "SAFEZONE"
+local POS = CollectPos - Vector3.new(0,30,0)
+local TAMANHO = Vector3.new(45,12,45)
+
+local safe = Workspace:FindFirstChild(A)
+if not safe then
+    safe = Instance.new("Part")
+    safe.Name = A
+    safe.Size = TAMANHO
+    safe.Anchored = true
+    safe.CanCollide = true
+    safe.Position = POS
+    safe.Transparency = 0.15
+    safe.Material = Enum.Material.SmoothPlastic
+    safe.BrickColor = BrickColor.new("Really black")
+    safe.Parent = Workspace_af
+end
+
+local function ref_af()
+    char = plr.Character or plr.CharacterAdded:Wait()
+    root = char:WaitForChild("HumanoidRootPart")
+    bag = plr:WaitForChild("Backpack")
+end
+
+local function tp_af(p)
+    if char and root then
+        char:PivotTo(CFrame.new(p))
+    end
+end
+
+local function tps_af()
+    local y = safe.Position.Y + safe.Size.Y/2 + 4
+    tp_af(Vector3.new(safe.Position.X,y,safe.Position.Z))
+end
+
+local function item_af(n)
+    return bag:FindFirstChild(n) or char:FindFirstChild(n)
+end
+
+local function aberto_af()
+    local s = status
+    return s and s.Text == "ABERTO"
+end
+
+local function c4_af()
+    if not item_af("C4") then
+        tp_af(Vector3.new(-760,19,-343))
+        task.wait(0.3)
+        BuyShop:FireServer("C4")
+        repeat task.wait(0.1) until item_af("C4")
+    end
+end
+
+local function dinheiro_af()
+    for _,v in ipairs(Workspace:GetDescendants()) do
+        if v.Name == "Money Bag" then
+            local h = v:FindFirstChildWhichIsA("BasePart")
+            local a = h and h:FindFirstChild("DataAttachment")
+            local g = a and a:FindFirstChild("BillboardGui")
+            local l = g and g.Frame:FindFirstChild("Money")
+            return l and tonumber(l.Text:match("%d+")) or 0
+        end
+    end
+    return 0
+end
+
+local function spin_af()
+    if char and root then
+        char:PivotTo(root.CFrame * CFrame.Angles(0,math.rad(30),0))
+    end
+end
+
+local function vender_af()
+    local b = Vector3.new(-742,-7,-536)
+    local o = Vector3.new(math.random(-3,3),math.random(-1,1),math.random(-3,3))
+    local p = b + o
+    tp_af(p)
+    task.wait(0.15)
+    while dinheiro_af() > 0 do
+        Robbery:FireServer("Payment")
+        task.wait(0.1)
+    end
+    task.wait(1)
+    tp_af(CollectPos)
+    task.wait(0.1)
+    tps_af()
+    task.wait(0.05)
+end
+
+local function seguro_af()
+    if not ModoSeguro then return end
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= plr and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (p.Character.HumanoidRootPart.Position - root.Position).Magnitude
+            if d <= RaioDeSeguranca then
+                tps_af()
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local rodando = false
+
+local function farm_af()
+    if rodando then return end
+    rodando = true
+    task.spawn(function()
+        repeat task.wait(0.3) until aberto_af()
+        c4_af()
+        tp_af(Vector3.new(-309,-8,-358))
+        task.wait(0.25)
+        local t = item_af("C4")
+        if t then char.Humanoid:EquipTool(t) end
+        repeat task.wait(0.1) until item_af("C4")
+        local vault = bank.BankVault.Vault.Front.Position
+        tp_af(vault)
+        task.wait(0.25)
+        local prompt = bank.BankVault.C4.Handle:FindFirstChildOfClass("ProximityPrompt")
+        while item_af("C4") and aberto_af() do
+            if seguro_af() then repeat task.wait(1) until not seguro_af() end
+            fireproximityprompt(prompt)
+            task.wait(0.15)
+        end
+        tps_af()
+        task.wait(10)
+        while aberto_af() do
+            if seguro_af() then repeat task.wait(1) until not seguro_af() end
+            if dinheiro_af() >= 4000 then
+                task.wait(math.random(5,7))
+                vender_af()
+            else
+                tp_af(CollectPos)
+                task.wait(0.01)
+                spin_af()
+                if char.Humanoid.Health < 50 then
+                    tps_af()
+                    repeat task.wait(0.2) until char.Humanoid.Health >= 90
+                end
+                tps_af()
+                task.wait(0.005)
+            end
+        end
+        rodando = false
+    end)
+end
+
+ref_af()
+
+plr.CharacterAdded:Connect(function(c)
+    task.wait(0.05)
+    ref_af()
+    c:WaitForChild("Humanoid").Died:Connect(function()
+        rodando = false
+        local n = plr.CharacterAdded:Wait()
+        char = n
+        ref_af()
+        task.wait(1)
+        tp_af(CollectPos)
+        task.wait(0.1)
+        tps_af()
+        -- farm_af() removed here as well
+    end)
+end)
+
+
+
+local last = status.Text
+notif("Banco", last == "ABERTO" and "O banco estÃ¡ aberto" or "O banco estÃ¡ fechado")
+
+statusLabel:GetPropertyChangedSignal("Text"):Connect(function()
+    local s = status.Text
+    if s ~= last then
+        last = s
+        if s == "ABERTO" then
+            notif_af("Banco", "O banco abriu")
+        else
+            notif_af("Banco", "O banco fechou")
+        end
+    end
+end)
+-- AUTOFARM INTEGRATION END
+
+-- Replace Tab C with autofarm controls
+do
+    local TabC = ElementsSection:Tab({
+        Title = "Autofarm",
+        Icon = "solar:CursorSquareBold",
+        IconColor = Blue,
+        IconShape = "Square",
+    })
+
+    local SectionC = TabC:Section({
+        Title = "Autofarm Controls"
+    })
+
+    SectionC:Toggle({
+        Title = "Ativar autofarm",
+        Callback = function(v)
+            if v then
+                WindUI:Notify({Title="Autofarm", Desc="Autofarm ativado"})
+                if not rodando then
+                    task.spawn(function() farm_af() end)
+                end
+            else
+                WindUI:Notify({Title="Autofarm", Desc="Autofarm desativado"})
+                rodando = false
+            end
+        end
+    })
+    SectionC:Space()
+
+    SectionC:Toggle({
+        Title = "Modo seguro",
+        Callback = function(v)
+            ModoSeguro = v
+            WindUI:Notify({
+                Title = "Modo seguro",
+                Desc = v and "Ativado" or "Desativado"
+            })
+        end
+    })
+    SectionC:Space()
+
+    SectionC:Input({
+        Title = "Raio de seguranÃ§a",
+        Placeholder = tostring(RaioDeSeguranca),
+        Callback = function(v)
+            local n = tonumber(v)
+            if n then
+                RaioDeSeguranca = n
+                WindUI:Notify({
+                    Title = "Modo seguro",
+                    Desc = "Raio atualizado para "..n
+                })
+            else
+                WindUI:Notify({
+                    Title = "Erro",
+                    Desc = "Digite um nÃºmero vÃ¡lido"
+                })
+            end
+        end
+    })
+end
