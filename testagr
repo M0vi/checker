@@ -81,21 +81,21 @@ WindUI.Creator.AddIcons("solar", {
 })
 
 local Window = WindUI:CreateWindow({
-    Title = "[E.B] fp3",
+    Title = "[Exército Brasileiro] Main Loader",
     Folder = "fp3",
     IconSize = 22*2,
     NewElements = true,
     HideSearchBar = false,
     OpenButton = {
-        Title = "Menu",
+        Title = "Abrir o menu",
         CornerRadius = UDim.new(1,0),
         StrokeThickness = 2,
         Enabled = true,
         Draggable = true,
         OnlyMobile = false,
         Color = ColorSequence.new(
-            Color3.fromHex("#30FF6A"),
-            Color3.fromHex("#e7ff2f")
+            Color3.fromHex("#257AF7"),
+            Color3.fromHex("#000000")
         )
     },
     Topbar = {
@@ -108,6 +108,12 @@ Window:Tag({
     Title = "v0.0.5",
     Icon = "github",
     Color = Color3.fromHex("#3480eb")
+})
+
+Window:Tag({
+    Title = "sanctuaryangels",
+    Icon = "logo-youtube-small",
+    Color = Color3.fromHex("#ef4f1d")
 })
 
 local Purple = Color3.fromHex("#7775F2")
@@ -883,7 +889,7 @@ if Response and Response.guild then
         Title = tostring(Response.guild.name),
         Desc = tostring(Response.guild.description),
         Image = "https://cdn.discordapp.com/icons/" .. Response.guild.id .. "/" .. Response.guild.icon .. ".png?size=1024",
-        Thumbnail = "https://i.pinimg.com/736x/4b/18/59/4b18592b4ebf3c618d121ff8d687f3c9.jpg",
+        Thumbnail = "https://i.pinimg.com/1200x/63/8c/5e/638c5e9084688a81fdf74200e85c655c.jpg",
         ImageSize = 80,
         Buttons = {
             {
