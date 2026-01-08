@@ -7,7 +7,7 @@ import random
 import unicodedata
 
 
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1335654618969145504/X5FTzI5dSSxJsxbRAESv-bsnkxhjii3EEmqqTw1Bf9lJG_gTThDekO2ZBPdgfG8BNjI-"  
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1458653748820967437/xgHjLemSxx9XLGnV2DfRUwAukKmkgGAyZx8QxQHzHmnzxXQhKbtgNEgKk0zlTsTY0Ply"  
 
 
 def load_proxies(filename):
