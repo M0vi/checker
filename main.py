@@ -11,7 +11,7 @@ DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1458653748820967437/xgHj
 
 # --- CONFIGURAÇÕES DE VELOCIDADE TURBO ---
 MAX_CONCURRENT_TASKS = 300  # Quantas checagens de nomes ao mesmo tempo
-EXTRACTION_WORKERS = 25     # Quantos "braços" pegando palavras do site simultaneamente
+EXTRACTION_WORKERS = 15     # Quantos "braços" pegando palavras do site simultaneamente
 # -----------------------------------------
 
 def load_proxies(filename):
